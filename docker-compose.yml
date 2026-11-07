@@ -1,4 +1,4 @@
-# Configurador Tesla 3D — despliegue con Docker Compose (Unraid u otro host).
+# Configurador 3D de coches — despliegue con Docker Compose (Unraid u otro host).
 # Variables configurables en el archivo .env junto a este archivo.
 services:
   configurador-tesla:
@@ -10,8 +10,6 @@ services:
     ports:
       - "${CONFIGURADOR_PORT:-8100}:8080"
     volumes:
-      # Modelos 3D propios (opcional). Se conservan fuera del contenedor.
-      - ${CONFIGURADOR_MODELOS:-./modelos}:/srv/configurador/custom:ro
       # Coches subidos desde la interfaz (mods de GTA V convertidos). Se conservan al actualizar.
       - ${CONFIGURADOR_DATOS:-./datos}:/data
     read_only: true

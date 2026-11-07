@@ -141,7 +141,7 @@ export default function App() {
   const quality = useStore((s) => s.quality);
   const setLoaded = useStore((s) => s.setLoaded);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<TabId>('modelo');
+  const [tab, setTab] = useState<TabId>('garaje');
   const mobile = useIsMobile();
 
   useEffect(() => {
@@ -160,9 +160,7 @@ export default function App() {
       <main className="stage">
         <header className="brand">
           <h1>Configurador 3D</h1>
-          <p>
-            {model?.name} · {model?.generations.find((g) => g.id === config.generationId)?.label}
-          </p>
+          <p>{model ? model.name : 'Garaje vacío'}</p>
         </header>
         <ErrorBoundary key={gen?.url}>
           <Canvas
@@ -178,7 +176,17 @@ export default function App() {
         </ErrorBoundary>
         <LoadingOverlay />
         <Toolbar />
-        <Summary />
+        {model ? (
+          <Summary />
+        ) : (
+          <div className="empty-stage">
+            <h2>Tu garaje está vacío</h2>
+            <p>Sube el mod de GTA V del coche que quieras personalizar (.rar, .zip, .oiv, .rpf o .yft/.ytd).</p>
+            <button className="btn primary" onClick={() => setTab('garaje')}>
+              Subir un coche
+            </button>
+          </div>
+        )}
         <ViewBar />
       </main>
       <aside className="panel" aria-label="Opciones de configuración">

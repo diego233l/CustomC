@@ -1,7 +1,7 @@
 /**
- * Tipos del catálogo. El catálogo se carga en tiempo de ejecución desde
- * /models/catalog.json (incluido en la imagen) y, opcionalmente, desde
- * /custom/catalog.json (carpeta montada desde Unraid). Ver README.
+ * Tipos del catálogo. /models/catalog.json (incluido en la imagen) define
+ * pinturas, llantas y acabados; los coches los genera el servidor a partir de
+ * los mods subidos (/mods/catalog.json).
  */
 
 /** Lista de selectores de material: nombre exacto o expresión regular "/patrón/i". */
@@ -152,5 +152,5 @@ export interface Catalog {
 export interface ResolvedGeneration extends Generation {
   url: string;
   variantUrls: Record<string, string>;
-  origin: 'integrado' | 'personalizado' | 'subido';
+  origin: 'integrado' | 'subido';
 }

@@ -16,25 +16,6 @@ import {
   type ServerStatus,
 } from '../utils/modsApi';
 
-const MODEL_ID = 'mis-coches';
-
-export const DESTINOS: { id: string; label: string }[] = [
-  { id: 'model-s', label: 'Sustituir al Tesla Model S' },
-  { id: 'model-3', label: 'Sustituir al Tesla Model 3' },
-  { id: 'model-x', label: 'Sustituir al Tesla Model X' },
-  { id: 'model-y', label: 'Sustituir al Tesla Model Y' },
-  { id: 'mis-coches', label: 'Guardar en «Mis coches»' },
-];
-
-/** Adivina el modelo a partir de los nombres del archivo y del vehículo. */
-export function guessTarget(text: string): string {
-  const t = text.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
-  if (/\bmodel ?x\b|\bmodelx\b|p90d|p100d|\bmx\b/.test(t)) return 'model-x';
-  if (/\bmodel ?y\b|\bmodely\b/.test(t)) return 'model-y';
-  if (/\bmodel ?3\b|\bmodel3\b|highland/.test(t)) return 'model-3';
-  if (/\bmodel ?s\b|\bmodels\b|plaid/.test(t)) return 'model-s';
-  return 'mis-coches';
-}
 const ACCEPT = '.rar,.zip,.oiv,.rpf,.yft,.ytd';
 
 const pretty = (id: string) =>
@@ -49,7 +30,7 @@ async function dataUrlToBlob(url: string) {
   return (await fetch(url)).blob();
 }
 
-export function ModsSection() {
+export function GarageSection() {
   const [status, setStatus] = useState<ServerStatus | null | undefined>(undefined);
   const [mods, setMods] = useState<ModMeta[]>([]);
   const [files, setFiles] = useState<File[]>([]);
@@ -58,7 +39,7 @@ export function ModsSection() {
   const [name, setName] = useState('');
   const [author, setAuthor] = useState('');
   const [source, setSource] = useState('');
-  const [target, setTarget] = useState('mis-coches');
+  const [length, setLength] = useState('');
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +77,6 @@ export function ModsSection() {
       setCandidates(found);
       setChosen(found[0].id);
       setName(pretty(found[0].id));
-      setTarget(guessTarget(`${list.map((f) => f.name).join(' ')} ${found[0].id}`));
       setProgress(null);
     } catch (e) {
       setError((e as Error).message);
@@ -122,9 +102,8 @@ export function ModsSection() {
         autor: author.trim(),
         origen: source.trim(),
         vehiculo: cand.id,
-        destino: target,
         archivoOriginal: originalName,
-        longitud: result.report.lengthMeters,
+        longitud: Number(length.replace(',', '.')) > 1 ? Number(length.replace(',', '.')) : result.report.lengthMeters,
         informe: result.report as unknown as Record<string, unknown>,
       }));
       await uploadFile(id, 'model.glb', result.glb, (f) => setProgress(`Subiendo modelo ${Math.round(f * 100)} % (${mb(result.glb.byteLength)})…`));
@@ -134,7 +113,7 @@ export function ModsSection() {
         await uploadFile(id, 'original', files[0], (f) => setProgress(`Guardando original ${Math.round(f * 100)} %…`));
       await finishMod(id);
       setProgress('Cargando el coche en el configurador…');
-      await reloadCatalog({ modelId: target, generationId: id });
+      await reloadCatalog({ modelId: id });
       await refresh();
       setFiles([]);
       setCandidates([]);
@@ -168,17 +147,7 @@ export function ModsSection() {
     if (!confirm(`¿Eliminar «${m.nombre}» del servidor? No se puede deshacer.`)) return;
     try {
       await deleteMod(m.id);
-      await reloadCatalog(config.generationId === m.id ? { modelId: '', generationId: '' } : undefined);
-      await refresh();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
-
-  const reassign = async (m: ModMeta, destino: string) => {
-    try {
-      await updateMod(m.id, { destino });
-      await reloadCatalog({ modelId: destino, generationId: m.id });
+      await reloadCatalog(config.modelId === m.id ? { modelId: '', generationId: '' } : undefined);
       await refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -186,10 +155,13 @@ export function ModsSection() {
   };
 
   const rename = async (m: ModMeta) => {
-    const nombre = prompt('Nuevo nombre', m.nombre);
-    if (!nombre || nombre === m.nombre) return;
+    const nombre = prompt('Nombre del coche', m.nombre);
+    if (nombre === null) return;
+    const largo = prompt('Longitud real del coche en metros (escala el modelo)', m.longitud.toFixed(3));
+    if (largo === null) return;
+    const longitud = Number(largo.replace(',', '.'));
     try {
-      await updateMod(m.id, { nombre });
+      await updateMod(m.id, { nombre: nombre.trim() || m.nombre, ...(longitud > 1 && longitud < 30 ? { longitud } : {}) });
       await reloadCatalog();
       await refresh();
     } catch (e) {
@@ -197,11 +169,11 @@ export function ModsSection() {
     }
   };
 
-  if (status === undefined) return <section className="section"><h2>Mis coches</h2><p className="note">Comprobando el servidor…</p></section>;
+  if (status === undefined) return <section className="section"><h2>Garaje</h2><p className="note">Comprobando el servidor…</p></section>;
   if (status === null)
     return (
       <section className="section">
-        <h2>Mis coches</h2>
+        <h2>Garaje</h2>
         <p className="note">
           La subida de coches necesita el servidor del contenedor Docker (no está disponible en el modo de desarrollo
           estático).
@@ -212,39 +184,26 @@ export function ModsSection() {
   return (
     <section className="section">
       <h2>
-        Mis coches <small>mods de GTA V</small>
+        Garaje <small>{mods.length ? `${mods.length} ${mods.length === 1 ? 'coche' : 'coches'}` : 'vacío'}</small>
       </h2>
       {mods.length > 0 && (
         <ul className="saved mods">
           {mods.map((m) => (
             <li key={m.id}>
               <button
-                className={config.generationId === m.id ? 'saved-main active' : 'saved-main'}
-                onClick={() => useStore.getState().update({ modelId: m.destino ?? MODEL_ID, generationId: m.id })}
+                className={config.modelId === m.id ? 'saved-main active' : 'saved-main'}
+                onClick={() => useStore.getState().update({ modelId: m.id })}
                 title="Ver en el configurador"
               >
                 <img src={`mods/${m.id}/miniatura.jpg`} alt="" onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')} />
                 <span>
                   <strong>{m.nombre}</strong>
                   <small>
-                    {DESTINOS.find((d) => d.id === (m.destino ?? MODEL_ID))?.label.replace('Sustituir al ', 'Sustituye al ').replace('Guardar en «Mis coches»', 'En «Mis coches»')} · {m.vehiculo}
+                    {m.vehiculo} · {m.longitud.toFixed(2)} m · {new Date(m.creado).toLocaleDateString('es-ES')}
                   </small>
                 </span>
               </button>
-              <select
-                className="icon-select"
-                aria-label={`Destino de ${m.nombre}`}
-                title="Cambiar a qué modelo sustituye"
-                value={m.destino ?? MODEL_ID}
-                onChange={(e) => reassign(m, e.target.value)}
-              >
-                {DESTINOS.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
-              <button className="icon-btn" aria-label={`Renombrar ${m.nombre}`} title="Renombrar" onClick={() => rename(m)}>
+              <button className="icon-btn" aria-label={`Editar ${m.nombre}`} title="Editar nombre y longitud" onClick={() => rename(m)}>
                 ✎
               </button>
               <button className="icon-btn" aria-label={`Eliminar ${m.nombre}`} title="Eliminar" onClick={() => remove(m)}>
@@ -259,7 +218,7 @@ export function ModsSection() {
         <p className="note">La subida de coches está desactivada en este servidor.</p>
       ) : (
         <>
-          <h3>Subir un coche</h3>
+          <h3>{mods.length ? 'Añadir otro coche' : 'Sube tu primer coche'}</h3>
           {status.requiereClave && (
             <label className="field">
               <span>Clave de subida</span>
@@ -325,18 +284,12 @@ export function ModsSection() {
                 </label>
               )}
               <label className="field">
-                <span>Usar como</span>
-                <select value={target} onChange={(e) => setTarget(e.target.value)}>
-                  {DESTINOS.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
                 <span>Nombre</span>
                 <input className="text" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />
+              </label>
+              <label className="field">
+                <span>Longitud real en metros (opcional; si no, se usa la del mod)</span>
+                <input className="text" inputMode="decimal" placeholder="p. ej. 4,751" value={length} maxLength={6} onChange={(e) => setLength(e.target.value)} />
               </label>
               <label className="field">
                 <span>Autor del mod (opcional)</span>

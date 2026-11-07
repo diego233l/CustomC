@@ -206,3 +206,8 @@ code { background: #0003; padding: 0 4px; border-radius: 4px; font-size: 0.9em; 
 .brand p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand { right: 220px; }
 .app.mobile .brand { right: 176px; }
+
+.empty-stage { position: absolute; z-index: 2; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; padding: 24px; pointer-events: none; }
+.empty-stage h2 { margin: 0; font-size: 24px; font-weight: 600; text-shadow: 0 2px 12px #000a; }
+.empty-stage p { margin: 0; max-width: 420px; color: #d0d4d8; text-shadow: 0 1px 8px #000a; }
+.empty-stage .btn { pointer-events: auto; margin-top: 6px; }

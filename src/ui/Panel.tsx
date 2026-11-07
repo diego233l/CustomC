@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import type { Generation, Paint, Wheel, WheelDesign, WheelFinish } from '../catalog/types';
+import type { Paint, Wheel, WheelDesign, WheelFinish } from '../catalog/types';
 import { Icon } from './icons';
 import { useStore } from '../state/store';
 import { ENVIRONMENTS } from '../three/environments';
 import { captureImage, captureThumbnail } from '../utils/capture';
-import { ModsSection } from './ModsSection';
+import { GarageSection } from './GarageSection';
 
 const FINISH_LABEL: Record<Paint['finish'], string> = {
   solido: 'Sólido',
@@ -13,14 +13,13 @@ const FINISH_LABEL: Record<Paint['finish'], string> = {
   mate: 'Mate',
 };
 
-export type TabId = 'modelo' | 'pintura' | 'llantas' | 'suspension' | 'entorno' | 'coches' | 'mas';
+export type TabId = 'garaje' | 'pintura' | 'llantas' | 'suspension' | 'entorno' | 'mas';
 export const TABS: { id: TabId; label: string; icon: () => React.JSX.Element }[] = [
-  { id: 'modelo', label: 'Modelo', icon: Icon.coche },
+  { id: 'garaje', label: 'Garaje', icon: Icon.garaje },
   { id: 'pintura', label: 'Pintura', icon: Icon.pintura },
   { id: 'llantas', label: 'Llantas', icon: Icon.llanta },
   { id: 'suspension', label: 'Suspensión', icon: Icon.suspension },
   { id: 'entorno', label: 'Entorno', icon: Icon.entorno },
-  { id: 'coches', label: 'Mis coches', icon: Icon.garaje },
   { id: 'mas', label: 'Más', icon: Icon.mas },
 ];
 
@@ -53,77 +52,6 @@ export function summaryLines(): string[] {
     `Pintura: ${paint?.name ?? ''} · Llantas: ${wheel?.name ?? ''} ${l.catalog.wheelFinishes.find((f) => f.id === c.wheelFinishId)?.name.toLowerCase() ?? ''}${c.rimDelta ? ` (${c.rimDelta > 0 ? '+' : ''}${c.rimDelta}″)` : ''}${c.rideHeight ? ` · Suspensión ${c.rideHeight > 0 ? '+' : ''}${c.rideHeight} cm` : ''} · Entorno: ${env?.name ?? ''}`,
     `Modelo 3D: «${gen?.credits.title ?? ''}» de ${gen?.credits.author ?? ''} (${gen?.credits.license ?? ''})`,
   ];
-}
-
-function ModelSection() {
-  const { loaded, config, model, gen } = useCurrent();
-  const update = useStore((s) => s.update);
-  return (
-    <section className="section">
-      <h2>Modelo</h2>
-      <div className="model-tabs" role="tablist" aria-label="Modelo">
-        {loaded.catalog.models.map((m) => {
-          const ok = m.generations.some((g) => g.available !== false);
-          return (
-            <button
-              key={m.id}
-              role="tab"
-              aria-selected={m.id === config.modelId}
-              className={m.id === config.modelId ? 'chip active' : 'chip'}
-              disabled={!ok}
-              title={ok ? m.name : `${m.name}: modelo 3D pendiente`}
-              onClick={() => update({ modelId: m.id })}
-            >
-              {m.name.replace('Tesla ', '')}
-            </button>
-          );
-        })}
-      </div>
-      <label className="field">
-        <span>Generación</span>
-        <select value={config.generationId} onChange={(e) => update({ generationId: e.target.value })}>
-          {model.generations.map((g: Generation) => (
-            <option key={g.id} value={g.id} disabled={g.available === false}>
-              {g.label}
-              {g.years ? ` (${g.years})` : ''}
-              {g.available === false ? ' — pendiente' : ''}
-            </option>
-          ))}
-        </select>
-      </label>
-      {gen.variants && gen.variants.length > 0 && (
-        <div className="segmented" role="radiogroup" aria-label="Variante">
-          <button className={!config.variantId ? 'active' : ''} onClick={() => update({ variantId: null })}>
-            Estándar
-          </button>
-          {gen.variants.map((v) => (
-            <button key={v.id} className={config.variantId === v.id ? 'active' : ''} onClick={() => update({ variantId: v.id })}>
-              {v.label}
-            </button>
-          ))}
-        </div>
-      )}
-      {gen.note && <p className="note">{gen.note}</p>}
-      <p className="credit-line">
-        Modelo 3D: «{gen.credits.title}» de{' '}
-        {gen.credits.authorUrl || /^https?:/.test(gen.credits.source) ? (
-          <a href={gen.credits.authorUrl ?? gen.credits.source} target="_blank" rel="noreferrer">
-            {gen.credits.author}
-          </a>
-        ) : (
-          gen.credits.author
-        )}{' '}
-        ·{' '}
-        {gen.credits.licenseUrl ? (
-          <a href={gen.credits.licenseUrl} target="_blank" rel="noreferrer">
-            {gen.credits.license}
-          </a>
-        ) : (
-          gen.credits.license
-        )}
-      </p>
-    </section>
-  );
 }
 
 const FINISH_ORDER: Paint['finish'][] = ['metalizado', 'perlado', 'solido', 'mate'];
@@ -527,8 +455,7 @@ function AdvancedSection() {
   const names = useStore((s) => s.materialNames);
   const highlight = useStore((s) => s.highlightMaterial);
   const set = useStore((s) => s.set);
-  const { gen, loaded, model } = useCurrent();
-  const origin = loaded.generations.get(`${model.id}/${gen.id}`)?.origin;
+  const loaded = useStore((s) => s.loaded)!;
   const [filter, setFilter] = useState('');
   const shown = useMemo(() => names.filter((n) => n.toLowerCase().includes(filter.toLowerCase())), [names, filter]);
   return (
@@ -602,27 +529,34 @@ function AdvancedSection() {
         ))}
       </ul>
       <p className="note">
-        Proyecto no oficial, sin relación con Tesla, Inc. «Tesla», «Model S», «Model 3», «Model X» y «Model Y» son marcas
-        de sus titulares. Los diseños de llanta alternativos son genéricos y no reproducen llantas oficiales.
-        {origin === 'personalizado' ? ' Este modelo procede de la carpeta personalizada.' : ''}
+        Herramienta para uso personal. Los coches son mods subidos por ti y pertenecen a sus autores; las marcas y
+        modelos que representen son de sus titulares. Los diseños de llanta alternativos son genéricos.
       </p>
       {loaded.warnings.length > 0 && <p className="note warn">{loaded.warnings.join(' · ')}</p>}
     </section>
   );
 }
 
-export function PanelContent({ tab }: { tab: TabId | 'all' }) {
-  const show = (t: TabId) => tab === 'all' || tab === t;
+function NoCar() {
+  return (
+    <section className="section">
+      <h2>Sin coche</h2>
+      <p className="note">Sube un coche en el Garaje para pintarlo, cambiarle las llantas o ajustar la suspensión.</p>
+    </section>
+  );
+}
+
+export function PanelContent({ tab }: { tab: TabId }) {
+  const hasCar = useStore((s) => !!s.config.modelId);
   return (
     <>
-      {show('modelo') && <ModelSection />}
-      {show('pintura') && <PaintSection />}
-      {show('llantas') && <WheelSection />}
-      {show('suspension') && <SuspensionSection />}
-      {show('entorno') && <EnvironmentSection />}
-      {show('coches') && <ModsSection />}
-      {show('mas') && <SaveExportSection />}
-      {show('mas') && <AdvancedSection />}
+      {tab === 'garaje' && <GarageSection />}
+      {tab === 'pintura' && (hasCar ? <PaintSection /> : <NoCar />)}
+      {tab === 'llantas' && (hasCar ? <WheelSection /> : <NoCar />)}
+      {tab === 'suspension' && (hasCar ? <SuspensionSection /> : <NoCar />)}
+      {tab === 'entorno' && <EnvironmentSection />}
+      {tab === 'mas' && hasCar && <SaveExportSection />}
+      {tab === 'mas' && <AdvancedSection />}
     </>
   );
 }

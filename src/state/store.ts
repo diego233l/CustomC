@@ -121,6 +121,22 @@ export function sanitize(c: Partial<Configuration>, loaded: LoadedCatalog): Conf
 function sanitizeBase(c: Partial<Configuration>, loaded: LoadedCatalog): Configuration {
   const { catalog, generations } = loaded;
   const available = catalog.models.filter((m) => m.generations.some((g) => g.available !== false));
+  // Garaje vacío: no hay coche seleccionado, pero se conservan entorno y preferencias.
+  if (!available.length)
+    return {
+      ...emptyConfig,
+      ...c,
+      modelId: '',
+      generationId: '',
+      variantId: null,
+      paintId: c.paintId && catalog.paints.some((p) => p.id === c.paintId) ? c.paintId : (catalog.paints[0]?.id ?? ''),
+      wheelId: 'original',
+      wheelFinishId: '',
+      rimDelta: Math.round(Math.min(4, Math.max(-3, Number(c.rimDelta) || 0))),
+      rideHeight: Math.min(5, Math.max(-8, Number(c.rideHeight) || 0)),
+      caliperId: null,
+      glassTint: typeof c.glassTint === 'number' ? Math.min(1, Math.max(0, c.glassTint)) : emptyConfig.glassTint,
+    };
   const model = catalog.models.find((m) => m.id === c.modelId && m.generations.some((g) => g.available !== false)) ?? available[0];
   const gens = model.generations.filter((g) => g.available !== false);
   const gen = gens.find((g) => g.id === c.generationId) ?? gens[0];

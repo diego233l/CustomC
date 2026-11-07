@@ -23,8 +23,8 @@ RUN npm run catalog:validate && npm run build
 FROM node:22-alpine
 ARG VERSION=dev
 ARG REVISION=unknown
-LABEL org.opencontainers.image.title="Configurador Tesla 3D" \
-      org.opencontainers.image.description="Configurador 3D web de Tesla Model S, 3, X e Y con importación de mods de GTA V" \
+LABEL org.opencontainers.image.title="Configurador 3D" \
+      org.opencontainers.image.description="Configurador 3D web para personalizar coches importados desde mods de GTA V" \
       org.opencontainers.image.source="https://github.com/diego233l/CustomC" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}" \
@@ -32,12 +32,10 @@ LABEL org.opencontainers.image.title="Configurador Tesla 3D" \
 ENV NODE_ENV=production \
     PORT=8080 \
     STATIC_DIR=/app/dist \
-    CUSTOM_DIR=/srv/configurador/custom \
     DATA_DIR=/data
 WORKDIR /app
 COPY --from=build /app/dist /app/dist
 COPY server/server.mjs /app/server.mjs
-COPY docker/custom-README.txt /srv/configurador/custom/LEEME.txt
 RUN mkdir -p /data && chown 99:100 /data
 # Unraid usa por convención el usuario nobody (99) y el grupo users (100).
 USER 99:100

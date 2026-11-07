@@ -12,8 +12,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
           <p>No se pudo mostrar el modelo 3D.</p>
           <small>{this.state.error.message}</small>
           <p>
-            Comprueba que el navegador admite WebGL 2 y que el archivo GLB existe. Si es un modelo personalizado, revisa la
-            ruta en <code>custom/catalog.json</code>.
+            Comprueba que el navegador admite WebGL 2. Si el coche se subió con una versión anterior, elimínalo del Garaje y
+            vuelve a subirlo.
           </p>
         </div>
       );

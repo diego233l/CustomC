@@ -12,7 +12,6 @@ import { Transform } from 'node:stream';
 
 const PORT = Number(process.env.PORT ?? 8080);
 const STATIC_DIR = resolve(process.env.STATIC_DIR ?? './dist');
-const CUSTOM_DIR = resolve(process.env.CUSTOM_DIR ?? '/srv/configurador/custom');
 const DATA_DIR = resolve(process.env.DATA_DIR ?? '/data');
 const MODS_DIR = join(DATA_DIR, 'mods');
 const MAX_UPLOAD = Number(process.env.MAX_SUBIDA_MB ?? 400) * 1024 * 1024;
@@ -147,8 +146,9 @@ function sanitizeMeta(input, previous = {}) {
     origen: clip(input.origen ?? previous.origen ?? '', 300),
     licencia: clip(input.licencia ?? previous.licencia ?? '', 120),
     vehiculo: clip(input.vehiculo ?? previous.vehiculo ?? '', 60),
-    // Modelo del catálogo al que sustituye (model-s, model-3, model-x, model-y) o «mis-coches».
-    destino: DESTINOS[input.destino] ? input.destino : DESTINOS[previous.destino] ? previous.destino : 'mis-coches',
+    destino: previous.destino,
+    // La longitud indicada a mano tiene prioridad sobre cualquier valor por defecto.
+    longitudEditada: input.longitud !== undefined && previous.longitud !== undefined ? true : previous.longitudEditada,
     archivoOriginal: clip(input.archivoOriginal ?? previous.archivoOriginal ?? '', 200),
     longitud: num(input.longitud ?? previous.longitud, 1, 30, 4.7),
     pinturaInicial: clip(input.pinturaInicial ?? previous.pinturaInicial ?? '', 40),
@@ -166,43 +166,26 @@ const GTA_PARTS = {
   rims: ['/^gta_pieza_/'],
 };
 
-// Longitud real de cada modelo: los mods de GTA a veces están escalados.
+// Versiones anteriores asignaban mods a un modelo Tesla; se respeta su longitud real.
 const LONGITUD_REAL = { 'model-s': 5.021, 'model-3': 4.694, 'model-x': 5.057, 'model-y': 4.751 };
 
-const DESTINOS = {
-  'mis-coches': 'Mis coches',
-  'model-s': 'Tesla Model S',
-  'model-3': 'Tesla Model 3',
-  'model-x': 'Tesla Model X',
-  'model-y': 'Tesla Model Y',
-};
-
+/** Cada coche subido es un modelo del catálogo con una única versión. */
 function catalogFromMods(mods) {
-  if (!mods.length) return { version: 1, models: [] };
-  const byTarget = new Map();
-  for (const m of mods) {
-    const t = m.destino && DESTINOS[m.destino] ? m.destino : 'mis-coches';
-    if (!byTarget.has(t)) byTarget.set(t, []);
-    byTarget.get(t).push(m);
-  }
   return {
     version: 1,
-    models: [...byTarget].map(([target, list]) => ({
-      id: target,
-      name: DESTINOS[target],
-      // Los mods asignados a un modelo se muestran antes que la versión integrada.
-      priority: target !== 'mis-coches',
-      generations: list.map((m) => ({
-          id: m.id,
-          label: target === 'mis-coches' ? m.nombre : `${m.nombre} · mod GTA V`,
-          years: target === 'mis-coches' ? 'mod de GTA V' : undefined,
+    models: mods.map((m) => ({
+      id: m.id,
+      name: m.nombre,
+      generations: [
+        {
+          id: 'principal',
+          label: m.vehiculo ? `Mod de GTA V (${m.vehiculo})` : 'Mod de GTA V',
           file: `${m.id}/model.glb`,
-          lengthMeters: LONGITUD_REAL[target] ?? m.longitud,
+          lengthMeters: m.longitudEditada ? m.longitud : (LONGITUD_REAL[m.destino] ?? m.longitud),
           forward: '-z',
           parts: m.parts ?? GTA_PARTS,
           // Si el mod no traía ruedas se generan neumáticos y se usa una llanta genérica.
           ...(m.informe?.generatedTires ? { noOriginalWheels: true, defaultWheel: 'turbina' } : { defaultWheel: 'original' }),
-          originalWheelInches: m.informe?.rimInches,
           ...(m.pinturaInicial ? { defaultPaint: m.pinturaInicial } : {}),
           credits: {
             title: m.nombre,
@@ -212,8 +195,8 @@ function catalogFromMods(mods) {
             licenseUrl: '',
             modifications: 'Convertido automáticamente de GTA V (.yft/.ytd) a GLB por el configurador.',
           },
-          note: 'Coche subido por ti a partir de un mod de GTA V. Las piezas se han identificado automáticamente por los shaders del juego.',
-        })),
+        },
+      ],
     })),
   };
 }
@@ -333,11 +316,6 @@ const server = createServer(async (req, res) => {
       const [, , id, file] = path.split('/');
       if (!ID_RE.test(id ?? '') || !['model.glb', 'miniatura.jpg'].includes(file ?? '')) return fail(res, 404, 'No encontrado');
       if (await serveFile(req, res, join(MODS_DIR, id, file), 'public, max-age=86400')) return;
-      return fail(res, 404, 'No encontrado');
-    }
-    if (path.startsWith('/custom/')) {
-      const f = safeJoin(CUSTOM_DIR, path.slice('/custom/'.length));
-      if (f && (await serveFile(req, res, f, 'no-cache'))) return;
       return fail(res, 404, 'No encontrado');
     }
     const f = safeJoin(STATIC_DIR, path === '/' ? 'index.html' : path.slice(1));
