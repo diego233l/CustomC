@@ -147,6 +147,8 @@ function sanitizeMeta(input, previous = {}) {
     origen: clip(input.origen ?? previous.origen ?? '', 300),
     licencia: clip(input.licencia ?? previous.licencia ?? '', 120),
     vehiculo: clip(input.vehiculo ?? previous.vehiculo ?? '', 60),
+    // Modelo del catálogo al que sustituye (model-s, model-3, model-x, model-y) o «mis-coches».
+    destino: DESTINOS[input.destino] ? input.destino : DESTINOS[previous.destino] ? previous.destino : 'mis-coches',
     archivoOriginal: clip(input.archivoOriginal ?? previous.archivoOriginal ?? '', 200),
     longitud: num(input.longitud ?? previous.longitud, 1, 30, 4.7),
     pinturaInicial: clip(input.pinturaInicial ?? previous.pinturaInicial ?? '', 40),
@@ -164,27 +166,43 @@ const GTA_PARTS = {
   rims: ['/^gta_pieza_/'],
 };
 
-const GENERIC_WHEELS = ['gen-turbina', 'gen-aero', 'gen-deportiva', 'gen-multirradio', 'gen-y'];
+// Longitud real de cada modelo: los mods de GTA a veces están escalados.
+const LONGITUD_REAL = { 'model-s': 5.021, 'model-3': 4.694, 'model-x': 5.057, 'model-y': 4.751 };
+
+const DESTINOS = {
+  'mis-coches': 'Mis coches',
+  'model-s': 'Tesla Model S',
+  'model-3': 'Tesla Model 3',
+  'model-x': 'Tesla Model X',
+  'model-y': 'Tesla Model Y',
+};
 
 function catalogFromMods(mods) {
   if (!mods.length) return { version: 1, models: [] };
+  const byTarget = new Map();
+  for (const m of mods) {
+    const t = m.destino && DESTINOS[m.destino] ? m.destino : 'mis-coches';
+    if (!byTarget.has(t)) byTarget.set(t, []);
+    byTarget.get(t).push(m);
+  }
   return {
     version: 1,
-    models: [
-      {
-        id: 'mis-coches',
-        name: 'Mis coches',
-        generations: mods.map((m) => ({
+    models: [...byTarget].map(([target, list]) => ({
+      id: target,
+      name: DESTINOS[target],
+      // Los mods asignados a un modelo se muestran antes que la versión integrada.
+      priority: target !== 'mis-coches',
+      generations: list.map((m) => ({
           id: m.id,
-          label: m.nombre,
-          years: 'mod de GTA V',
+          label: target === 'mis-coches' ? m.nombre : `${m.nombre} · mod GTA V`,
+          years: target === 'mis-coches' ? 'mod de GTA V' : undefined,
           file: `${m.id}/model.glb`,
-          lengthMeters: m.longitud,
+          lengthMeters: LONGITUD_REAL[target] ?? m.longitud,
           forward: '-z',
           parts: m.parts ?? GTA_PARTS,
           // Si el mod no traía ruedas se generan neumáticos y se usa una llanta genérica.
-          wheels: m.informe?.generatedTires ? GENERIC_WHEELS : ['original', 'original-negro', 'original-grafito', ...GENERIC_WHEELS],
-          defaultWheel: m.informe?.generatedTires ? 'gen-turbina' : 'original',
+          ...(m.informe?.generatedTires ? { noOriginalWheels: true, defaultWheel: 'turbina' } : { defaultWheel: 'original' }),
+          originalWheelInches: m.informe?.rimInches,
           ...(m.pinturaInicial ? { defaultPaint: m.pinturaInicial } : {}),
           credits: {
             title: m.nombre,
@@ -196,8 +214,7 @@ function catalogFromMods(mods) {
           },
           note: 'Coche subido por ti a partir de un mod de GTA V. Las piezas se han identificado automáticamente por los shaders del juego.',
         })),
-      },
-    ],
+    })),
   };
 }
 

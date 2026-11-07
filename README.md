@@ -29,13 +29,16 @@ cd /mnt/user/appdata/configurador-tesla && docker compose pull && docker compose
 - **Modelos**: Model S, Model 3, Model X y Model Y, con generaciones y variantes definidas en un catálogo JSON ampliable (p. ej. Model X con puertas Falcon abiertas).
 - **Vista 3D interactiva**: girar (arrastrar), acercar/alejar (rueda o pellizco) y desplazar (botón derecho o dos dedos).
 - **Pintura en tiempo real** con materiales PBR físicos: color base, metalizado con escamas (*flakes*), perlado multicapa, mate y barniz transparente (*clearcoat*).
-- **Llantas compatibles por modelo**: las originales del modelo 3D (con acabado original, negro brillo o grafito) y diseños alternativos genéricos ajustados automáticamente al tamaño de cada rueda. Color de pinzas de freno.
+- **Llantas**: las originales del modelo y 11 diseños alternativos (Aero, Turbina, Deportiva, Cóncava, Seis radios, Radios en Y, Multirradio, Malla, Estrella, Radios finos, Disco) con radios cóncavos, tuercas y frenos, más **10 acabados** combinables (plata, mecanizada bitono, grafito, negro brillo/mate, bronce, oro champán, blanco, cromo u original). Color de pinzas de freno.
+- **Diámetro de llanta** de −3″ a +4″: la llanta crece y el neumático reduce su perfil conservando el diámetro exterior, como en un cambio real de medida.
+- **Suspensión** de −8 cm a +5 cm (con preajustes de serie, deportiva, rebajada, muy rebajada y elevada): la carrocería baja o sube y las ruedas siguen apoyadas en el suelo.
 - **Piezas independientes**: carrocería, llantas, neumáticos, cristales (tintado regulable) y luces (encendido/apagado) se modifican por separado.
 - **Entornos realistas** con HDRI de Poly Haven: estudio oscuro, estudio claro, ciudad, carretera (calzada de asfalto con marcas viales generada sobre un paisaje en 4K), campo al amanecer y noche. Iluminación, reflejos y sombras coherentes con cada HDRI (la dirección del sol se calculó a partir de la propia imagen) y suelo proyectado en los exteriores.
 - **Vistas de cámara**: 3/4 delantera, frontal, lateral, 3/4 trasera, trasera, cenital y detalle de llanta.
 - **Guardar configuraciones** en el navegador (con miniatura), enlace para compartir la configuración y **exportar imagen** PNG (normal o 2×) con un pie que resume la configuración.
 - **Calidad gráfica** alta / media / baja (oclusión ambiental, suelo reflectante, antialias) para adaptarse a PC, tablet o móvil.
-- **Mis coches: subir mods de GTA V** (.rar, .zip, .oiv o .yft/.ytd sueltos). Se convierten en el navegador a GLB, se guardan en el servidor y aparecen en todos los dispositivos con las mismas opciones de pintura, llantas, luces y entornos. Ver «Subir coches (mods de GTA V)».
+- **Mis coches: subir mods de GTA V** (.rar, .zip, .oiv, .rpf o .yft/.ytd sueltos). Se convierten en el navegador a GLB, se guardan en el servidor y aparecen en todos los dispositivos con las mismas opciones de pintura, llantas, suspensión, luces y entornos. Cada mod puede **sustituir** a uno de los cuatro modelos (pasa a ser su versión por defecto) o guardarse en «Mis coches». Ver «Subir coches (mods de GTA V)».
+- **Interfaz**: barra lateral por pasos (Modelo, Pintura, Llantas, Suspensión, Entorno, Mis coches, Más) en escritorio y pestañas en móvil; resumen de la configuración y herramientas sobre la vista (giro, vista inicial, captura en alta resolución, pantalla completa).
 - **Inspector de materiales** para preparar nuevos modelos 3D.
 - Funciona **sin Internet** en la red local: todos los recursos se sirven desde el contenedor.
 
@@ -133,20 +136,23 @@ git clone https://github.com/diego233l/CustomC /mnt/user/appdata/configurador-te
 
 En la pestaña **«Mis coches»** puedes subir un mod de vehículo de GTA V (versión de PC) para verlo y personalizarlo en el configurador:
 
-1. Arrastra el archivo del mod (`.rar`, `.zip`, `.oiv`) o selecciona juntos sus `.yft` y `.ytd`.
-2. Revisa el nombre (y, si quieres, el autor y el enlace del mod) y pulsa **«Convertir y guardar»**.
+1. Arrastra el archivo del mod (`.rar`, `.zip`, `.oiv`, `.rpf`) o selecciona juntos sus `.yft` y `.ytd`.
+2. Elige **«Usar como»**: sustituir al Model S, 3, X o Y, o guardarlo en «Mis coches». Se propone automáticamente a partir del nombre del archivo (p. ej. `tesla_model_x.rar` → Model X). Revisa el nombre y pulsa **«Convertir y guardar»**.
 3. El navegador lo convierte a GLB (unos segundos), lo sube al servidor y lo selecciona. Queda guardado en `datos/mods/` y aparece en el selector de modelo, en «Mis coches», desde cualquier dispositivo. Se puede renombrar o eliminar desde la misma pestaña.
 
 Cómo funciona la conversión:
 
+- Los mods que sustituyen a un modelo aparecen como primera generación de ese modelo (la versión libre de Sketchfab queda como alternativa) y se escalan a la longitud real del coche. El destino se puede cambiar después desde la lista (icono de flechas).
+- Los paquetes `dlc.rpf` (incluidos dentro de un `.rar`/`.zip`) se leen sin descifrar su índice: los modelos y texturas se guardan sin cifrar dentro del paquete y se localizan por su cabecera. Las piezas de tuneo del paquete (parachoques, capós…) se ignoran y se usa el modelo principal en alta.
 - Lee los recursos RAGE `RSC7` (formato de PC del juego): geometría de alto detalle (`nombre_hi.yft` si existe), esqueleto, shaders y texturas (`nombre.ytd` y `nombre+hi.ytd`), con decodificación de texturas DXT1/3/5, BC4, BC5, BC7 y sin comprimir.
 - Identifica las piezas por los **shaders estándar de vehículos de GTA**: `vehicle_paint*` → carrocería (se puede repintar), `vehicle_tire` → neumáticos, `vehicle_vehglass` → cristales (tintado), `vehicle_lightsemissive` → faros y pilotos (se encienden), matrícula oculta. Las llantas se separan automáticamente por su posición dentro de los neumáticos.
-- Muchos mods **no incluyen ruedas** (el juego les pone sus llantas genéricas). En ese caso se generan neumáticos en los puntos de rueda del esqueleto y se elige un diseño de llanta genérico (cambiable).
+- Muchos mods **no incluyen ruedas** (el juego les pone sus llantas genéricas). En ese caso se generan neumáticos con dibujo en los puntos de rueda del esqueleto y se elige un diseño de llanta genérico (cambiable).
+- Los mods subidos no se incluyen en el repositorio ni en la imagen (licencia desconocida): se guardan solo en tu servidor. Si reinstalas, súbelos de nuevo o conserva la carpeta `datos`.
 - Se guarda también el archivo original (`original.bin`) por si en el futuro se mejora el conversor.
 
 Limitaciones:
 
-- Solo la versión de PC «Legacy» (`RSC7`). Los archivos de la edición *Enhanced* o de consolas, los `.rpf` cifrados y los `.7z` no se admiten (extrae los `.yft`/`.ytd` con OpenIV o CodeWalker).
+- Solo la versión de PC «Legacy» (`RSC7`). Los archivos de la edición *Enhanced* o de consolas y los `.7z` no se admiten; si un `.rpf` tuviera también cifrados los propios modelos, extrae los `.yft`/`.ytd` con OpenIV o CodeWalker.
 - Las texturas compartidas del juego (`vehshare.ytd`) no vienen en los mods; esas piezas se muestran con un color neutro. El aviso tras la conversión indica cuántas faltan.
 - Los colores de interior/tapicería definidos por paletas del juego se muestran con su textura base.
 - **Derechos**: usa solo mods que tengas derecho a utilizar. Muchos mods de vehículos se distribuyen solo para uso personal o proceden de otros juegos; los coches subidos quedan en tu servidor para uso privado y no se incluyen en el repositorio ni en la imagen Docker.

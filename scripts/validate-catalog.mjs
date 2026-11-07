@@ -8,7 +8,7 @@ const cat = JSON.parse(readFileSync(file, 'utf8'));
 const errors = [];
 const paints = new Set((cat.paints ?? []).map((p) => p.id));
 const wheels = new Set((cat.wheels ?? []).map((w) => w.id));
-const designs = new Set(['original', 'aero', 'cinco-dobles', 'multirradio', 'turbina', 'y-radios']);
+const designs = new Set(['original', 'aero', 'cinco-dobles', 'multirradio', 'turbina', 'y-radios', 'seis-radios', 'malla', 'estrella', 'disco', 'concava', 'radios-finos']);
 const forwards = new Set(['+x', '-x', '+z', '-z']);
 const isExtension = process.argv[2] !== undefined;
 

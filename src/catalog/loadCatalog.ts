@@ -60,13 +60,19 @@ export async function loadCatalog(): Promise<LoadedCatalog> {
   for (const m of mods?.models ?? []) for (const g of m.generations) resolve(m, g, modsUrl, 'subido');
 
   const mergeModel = (a: VehicleModel, b: VehicleModel) => ({ ...a, ...b, generations: byId(a.generations, b.generations) });
-  const models = byId(byId(builtin.models, custom?.models, mergeModel), mods?.models, mergeModel);
+  // Los mods asignados a un modelo (priority) van delante: pasan a ser la versión por defecto.
+  const mergeMods = (a: VehicleModel, b: VehicleModel) =>
+    b.priority
+      ? { ...a, generations: [...b.generations, ...a.generations.filter((g) => !b.generations.some((x) => x.id === g.id))] }
+      : mergeModel(a, b);
+  const models = byId(byId(builtin.models, custom?.models, mergeModel), mods?.models, mergeMods);
 
   const catalog: Catalog = {
     version: builtin.version,
     models,
     paints: byId(builtin.paints, custom?.paints),
     wheels: byId(builtin.wheels, custom?.wheels),
+    wheelFinishes: byId(builtin.wheelFinishes ?? [], custom?.wheelFinishes),
     caliperColors: byId(builtin.caliperColors ?? [], custom?.caliperColors),
   };
 

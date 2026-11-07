@@ -66,10 +66,13 @@ export interface Generation {
   parts: PartSelectors;
   /** Ids de pinturas compatibles (por defecto todas). */
   paints?: string[];
-  /** Ids de llantas compatibles (por defecto todas). */
+  /** Ids de diseños de llanta compatibles (por defecto todos). */
   wheels?: string[];
+  /** El modelo no trae llantas propias: se ocultan las opciones «originales». */
+  noOriginalWheels?: boolean;
   defaultPaint?: string;
   defaultWheel?: string;
+  defaultWheelFinish?: string;
   credits: Credits;
   /** Si es false, se muestra como "pendiente" (sin archivo disponible). */
   available?: boolean;
@@ -81,6 +84,8 @@ export interface VehicleModel {
   id: string;
   name: string;
   generations: Generation[];
+  /** Si es true (mods asignados), sus generaciones se muestran primero. */
+  priority?: boolean;
 }
 
 export type PaintFinish = 'solido' | 'metalizado' | 'perlado' | 'mate';
@@ -99,23 +104,39 @@ export interface Paint {
   flakeIntensity?: number;
 }
 
-export type WheelDesign = 'original' | 'aero' | 'cinco-dobles' | 'multirradio' | 'turbina' | 'y-radios';
+export type WheelDesign =
+  | 'original'
+  | 'aero'
+  | 'cinco-dobles'
+  | 'multirradio'
+  | 'turbina'
+  | 'y-radios'
+  | 'seis-radios'
+  | 'malla'
+  | 'estrella'
+  | 'disco'
+  | 'concava'
+  | 'radios-finos';
 
 export interface WheelFinish {
+  id: string;
+  name: string;
   color: string;
   metalness: number;
   roughness: number;
   clearcoat?: number;
+  /** Color de los huecos/fondo (bitono «mecanizado»). */
+  accent?: string;
 }
 
+/** Diseño de llanta. El acabado se elige aparte (lista `wheelFinishes`). */
 export interface Wheel {
   id: string;
   name: string;
   design: WheelDesign;
-  inches?: number;
-  /** Acabado; si se omite en el diseño "original" se conserva el material del modelo. */
-  finish?: WheelFinish;
   description?: string;
+  /** Acabado por defecto del diseño. */
+  defaultFinish?: string;
 }
 
 export interface Catalog {
@@ -123,6 +144,7 @@ export interface Catalog {
   models: VehicleModel[];
   paints: Paint[];
   wheels: Wheel[];
+  wheelFinishes: WheelFinish[];
   caliperColors?: { id: string; name: string; color: string }[];
 }
 

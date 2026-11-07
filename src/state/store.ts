@@ -9,6 +9,12 @@ export interface Configuration {
   variantId: string | null;
   paintId: string;
   wheelId: string;
+  /** Acabado de la llanta ('original' conserva el material del modelo). */
+  wheelFinishId: string;
+  /** Pulgadas de llanta añadidas (+) o quitadas (−) respecto al original. */
+  rimDelta: number;
+  /** Altura de la suspensión en centímetros (negativo = rebajado). */
+  rideHeight: number;
   caliperId: string | null;
   glassTint: number; // 0 (claro) – 1 (muy oscuro)
   environmentId: string;
@@ -89,6 +95,9 @@ const emptyConfig: Configuration = {
   variantId: null,
   paintId: '',
   wheelId: 'original',
+  wheelFinishId: 'original',
+  rimDelta: 0,
+  rideHeight: 0,
   caliperId: null,
   glassTint: 0.55,
   environmentId: 'estudio',
@@ -97,6 +106,19 @@ const emptyConfig: Configuration = {
 
 /** Completa/corrige una configuración contra el catálogo cargado. */
 export function sanitize(c: Partial<Configuration>, loaded: LoadedCatalog): Configuration {
+  const base = sanitizeBase(c, loaded);
+  const wheel = loaded.catalog.wheels.find((w) => w.id === base.wheelId);
+  const finishes = loaded.catalog.wheelFinishes.filter((f) => f.id !== 'original' || wheel?.design === 'original');
+  const finish =
+    c.wheelFinishId && finishes.some((f) => f.id === c.wheelFinishId)
+      ? c.wheelFinishId
+      : finishes.some((f) => f.id === wheel?.defaultFinish)
+        ? wheel!.defaultFinish!
+        : (finishes[0]?.id ?? 'original');
+  return { ...base, wheelFinishId: finish };
+}
+
+function sanitizeBase(c: Partial<Configuration>, loaded: LoadedCatalog): Configuration {
   const { catalog, generations } = loaded;
   const available = catalog.models.filter((m) => m.generations.some((g) => g.available !== false));
   const model = catalog.models.find((m) => m.id === c.modelId && m.generations.some((g) => g.available !== false)) ?? available[0];
@@ -104,7 +126,9 @@ export function sanitize(c: Partial<Configuration>, loaded: LoadedCatalog): Conf
   const gen = gens.find((g) => g.id === c.generationId) ?? gens[0];
   const resolved = generations.get(`${model.id}/${gen.id}`);
   const paints = gen.paints ?? catalog.paints.map((p) => p.id);
-  const wheels = gen.wheels ?? catalog.wheels.map((w) => w.id);
+  const wheels = (gen.wheels ?? catalog.wheels.map((w) => w.id)).filter(
+    (id) => !(gen.noOriginalWheels && catalog.wheels.find((w) => w.id === id)?.design === 'original'),
+  );
   const variantId = c.variantId && resolved?.variantUrls[c.variantId] ? c.variantId : null;
   return {
     ...emptyConfig,
@@ -113,7 +137,10 @@ export function sanitize(c: Partial<Configuration>, loaded: LoadedCatalog): Conf
     generationId: gen.id,
     variantId,
     paintId: c.paintId && paints.includes(c.paintId) ? c.paintId : (gen.defaultPaint ?? paints[0]),
-    wheelId: c.wheelId && wheels.includes(c.wheelId) ? c.wheelId : (gen.defaultWheel ?? wheels[0]),
+    wheelId: c.wheelId && wheels.includes(c.wheelId) ? c.wheelId : wheels.includes(gen.defaultWheel ?? '') ? gen.defaultWheel! : wheels[0],
+    wheelFinishId: '',
+    rimDelta: Math.round(Math.min(4, Math.max(-3, Number(c.rimDelta) || 0))),
+    rideHeight: Math.min(5, Math.max(-8, Number(c.rideHeight) || 0)),
     caliperId: c.caliperId && catalog.caliperColors?.some((x) => x.id === c.caliperId) ? c.caliperId : null,
     glassTint: typeof c.glassTint === 'number' ? Math.min(1, Math.max(0, c.glassTint)) : emptyConfig.glassTint,
   };
@@ -160,6 +187,12 @@ export const useStore = create<State>((set, get) => ({
       next.variantId = null;
     }
     if (patch.generationId && patch.generationId !== config.generationId) next.variantId = null;
+    if (patch.wheelId && patch.wheelId !== config.wheelId && !patch.wheelFinishId) {
+      const prevDesign = loaded.catalog.wheels.find((w) => w.id === config.wheelId)?.design;
+      const nextWheel = loaded.catalog.wheels.find((w) => w.id === patch.wheelId);
+      // Se conserva el acabado elegido salvo al pasar de/a las llantas originales.
+      if (prevDesign === 'original' || nextWheel?.design === 'original') next.wheelFinishId = '';
+    }
     const clean = sanitize(next, loaded);
     set({ config: clean });
     writeJson(LAST_KEY, clean);
@@ -202,6 +235,9 @@ const HASH_KEYS: Record<string, keyof Configuration> = {
   v: 'variantId',
   p: 'paintId',
   w: 'wheelId',
+  f: 'wheelFinishId',
+  d: 'rimDelta',
+  h: 'rideHeight',
   c: 'caliperId',
   t: 'glassTint',
   e: 'environmentId',
@@ -224,7 +260,7 @@ function decodeHash(hash: string): Partial<Configuration> {
   for (const [k, key] of Object.entries(HASH_KEYS)) {
     const v = params.get(k);
     if (v === null) continue;
-    if (key === 'glassTint') out[key] = Number(v);
+    if (key === 'glassTint' || key === 'rimDelta' || key === 'rideHeight') out[key] = Number(v);
     else if (key === 'lightsOn') out[key] = v === '1';
     else out[key] = v;
   }

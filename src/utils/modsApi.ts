@@ -12,6 +12,7 @@ export interface ModMeta {
   origen?: string;
   licencia?: string;
   vehiculo?: string;
+  destino?: string;
   archivoOriginal?: string;
   longitud: number;
   creado: string;

@@ -28,13 +28,13 @@ export async function convertVehicle(
   onProgress: (msg: string) => void,
 ): Promise<ConvertedMod> {
   onProgress('Leyendo geometría…');
-  const res = await Resource.load(candidate.yft.data);
+  const res = candidate.yft.resource ?? (await Resource.load(candidate.yft.data));
   const drawable = readYft(res);
   const textures: GtaTexture[] = [];
   for (const [i, t] of candidate.textures.entries()) {
     onProgress(`Leyendo texturas (${i + 1}/${candidate.textures.length})…`);
     try {
-      const r = await Resource.load(t.data);
+      const r = t.resource ?? (await Resource.load(t.data));
       textures.push(...readTextureDictionary(r, 0));
     } catch (e) {
       console.warn('Diccionario de texturas no válido', t.name, e);

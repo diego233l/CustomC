@@ -124,7 +124,8 @@ function buildMaterial(s: GtaShader, index: number, role: Role, tex: TextureCach
   const tag = role === 'luz' ? 'luz' : role;
   const m = new THREE.MeshStandardMaterial({
     name: `gta_${tag}_${index}`,
-    color: diffuse ? '#ffffff' : role === 'interior' ? '#2a2a2a' : role === 'neumatico' ? '#1b1b1b' : '#7d8186',
+    // Sin textura (suelen ser texturas compartidas del juego): plástico oscuro, lo más habitual en molduras y pasos de rueda.
+    color: diffuse ? '#ffffff' : role === 'interior' ? '#2a2a2a' : role === 'neumatico' ? '#1b1b1b' : '#1d1f22',
     map: diffuse?.texture ?? null,
     normalMap: normal?.texture ?? null,
     roughness: chrome ? 0.08 : role === 'neumatico' ? 0.85 : role === 'interior' ? 0.7 : 0.45,
@@ -228,7 +229,9 @@ export async function buildVehicle(
   // Los primeros tienen prioridad (texturas «+hi» antes que las normales).
   for (const t of [...textureList, ...drawable.embeddedTextures]) {
     const key = t.name.toLowerCase();
-    if (!textures.has(key) && t.levels > 0) textures.set(key, t);
+    const prev = textures.get(key);
+    // Si una textura aparece en varios diccionarios, gana la de mayor resolución.
+    if (t.levels > 0 && (!prev || t.width * t.height > prev.width * prev.height)) textures.set(key, t);
   }
   const tex = createTextureCache(textures, opts.maxTextureSize ?? 2048);
   const scene = new THREE.Group();

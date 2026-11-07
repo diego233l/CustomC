@@ -5,7 +5,9 @@ import { genKey, loadCatalog } from './catalog/loadCatalog';
 import { useStore, type CameraViewId } from './state/store';
 import { SceneContent } from './three/Scene';
 import { ErrorBoundary } from './ui/ErrorBoundary';
-import { PanelContent, TABS, type TabId } from './ui/Panel';
+import { Icon } from './ui/icons';
+import { PanelContent, summaryLines, TABS, type TabId } from './ui/Panel';
+import { captureImage } from './utils/capture';
 
 const VIEWS: { id: CameraViewId; label: string }[] = [
   { id: 'tres-cuartos-delantero', label: '3/4 delantera' },
@@ -53,6 +55,68 @@ function LoadingOverlay() {
         <div style={{ width: `${Math.round(progress)}%` }} />
       </div>
       <span>Cargando modelo 3D… {Math.round(progress)} %</span>
+    </div>
+  );
+}
+
+function Toolbar() {
+  const autoRotate = useStore((s) => s.autoRotate);
+  const set = useStore((s) => s.set);
+  const setView = useStore((s) => s.setView);
+  const [busy, setBusy] = useState(false);
+  const fullscreen = () => {
+    const el = document.documentElement;
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    else el.requestFullscreen?.().catch(() => undefined);
+  };
+  const shot = async () => {
+    setBusy(true);
+    try {
+      const blob = await captureImage(2, summaryLines());
+      if (!blob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `configuracion-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="toolbar" role="toolbar" aria-label="Herramientas de la vista">
+      <button className={autoRotate ? 'active' : ''} onClick={() => set({ autoRotate: !autoRotate })} title="Giro automático" aria-pressed={autoRotate}>
+        <Icon.giro />
+      </button>
+      <button onClick={() => setView('tres-cuartos-delantero')} title="Vista inicial">
+        <Icon.centrar />
+      </button>
+      <button onClick={shot} disabled={busy} title="Exportar imagen en alta resolución">
+        <Icon.camara />
+      </button>
+      <button onClick={fullscreen} title="Pantalla completa">
+        <Icon.pantalla />
+      </button>
+    </div>
+  );
+}
+
+function Summary() {
+  const loaded = useStore((s) => s.loaded)!;
+  const c = useStore((s) => s.config);
+  const paint = loaded.catalog.paints.find((p) => p.id === c.paintId);
+  const wheel = loaded.catalog.wheels.find((w) => w.id === c.wheelId);
+  const finish = loaded.catalog.wheelFinishes.find((f) => f.id === c.wheelFinishId);
+  return (
+    <div className="summary" aria-live="polite">
+      <span className="chip-s">
+        <i style={{ background: paint?.color }} /> {paint?.name}
+      </span>
+      <span className="chip-s">
+        <i style={{ background: finish && finish.id !== 'original' ? finish.color : '#9aa0a6' }} /> {wheel?.name}
+        {c.rimDelta ? ` ${c.rimDelta > 0 ? '+' : ''}${c.rimDelta}″` : ''}
+      </span>
+      {c.rideHeight !== 0 && <span className="chip-s">Suspensión {c.rideHeight > 0 ? '+' : ''}{c.rideHeight} cm</span>}
     </div>
   );
 }
@@ -113,27 +177,29 @@ export default function App() {
           </Canvas>
         </ErrorBoundary>
         <LoadingOverlay />
+        <Toolbar />
+        <Summary />
         <ViewBar />
       </main>
       <aside className="panel" aria-label="Opciones de configuración">
-        {mobile ? (
-          <>
-            <div className="tabs" role="tablist">
-              {TABS.map((t) => (
-                <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? 'active' : ''} onClick={() => setTab(t.id)}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-            <div className="panel-scroll">
-              <PanelContent tab={tab} />
-            </div>
-          </>
-        ) : (
-          <div className="panel-scroll">
-            <PanelContent tab="all" />
-          </div>
-        )}
+        <nav className={mobile ? 'tabs' : 'rail'} role="tablist" aria-label="Secciones">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
+              className={tab === t.id ? 'active' : ''}
+              onClick={() => setTab(t.id)}
+              title={t.label}
+            >
+              <t.icon />
+              <span>{t.label}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="panel-scroll" role="tabpanel">
+          <PanelContent tab={tab} />
+        </div>
       </aside>
     </div>
   );

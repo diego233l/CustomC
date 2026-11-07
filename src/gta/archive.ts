@@ -9,14 +9,49 @@ export interface ModFile {
   name: string; // ruta dentro del archivo
   base: string; // nombre sin carpeta, en minúsculas
   data: Uint8Array;
+  /** Recurso ya descomprimido (cuando procede de un .rpf). */
+  resource?: import('./rsc.ts').Resource;
 }
 
 const WANTED = /\.(yft|ytd|ydr)$/i;
 
+/**
+ * Extrae los recursos RSC7 de un .rpf sin descifrar su índice: en los
+ * paquetes de mods, el índice de archivos va cifrado (NG), pero los recursos
+ * (.yft/.ytd) se guardan sin cifrar y comienzan por la cabecera «RSC7», así
+ * que se localizan directamente. Los nombres se reconstruyen a partir del
+ * propio contenido (el .yft guarda su nombre).
+ */
+async function fromRpf(name: string, data: Uint8Array): Promise<ModFile[]> {
+  const { Resource } = await import('./rsc.ts');
+  const out: ModFile[] = [];
+  const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  let ytdIndex = 0;
+  for (let o = 0; o + 16 < data.length; o += 16) {
+    if (dv.getUint32(o, true) !== 0x37435352) continue;
+    const version = dv.getUint32(o + 4, true);
+    if (version !== 162 && version !== 13 && version !== 165) continue;
+    try {
+      const r = await Resource.load(data.subarray(o));
+      const raw = data.subarray(o); // el inflado se detiene al final del flujo
+      if (version === 162) {
+        const resName = r.str(r.ptr(0x58)).replace(/^pack:\//, '').toLowerCase() || `rpf_${o.toString(16)}`;
+        out.push({ name: `${name}/${resName}.yft`, base: `${resName}.yft`, data: raw, resource: r });
+      } else if (version === 13) {
+        out.push({ name: `${name}/textures_${ytdIndex}.ytd`, base: `rpf_textures_${ytdIndex++}.ytd`, data: raw, resource: r });
+      }
+    } catch {
+      /* falso positivo: no es un recurso válido */
+    }
+  }
+  if (!out.length) throw new Error('No se han encontrado modelos dentro del .rpf (puede que esté cifrado por completo).');
+  return out;
+}
+
 const baseName = (p: string) => p.split(/[\\/]/).pop()!.toLowerCase();
 
 async function fromZip(data: Uint8Array): Promise<ModFile[]> {
-  const entries = unzipSync(data, { filter: (f) => WANTED.test(f.name) || /\.(zip|oiv|rar)$/i.test(f.name) });
+  const entries = unzipSync(data, { filter: (f) => WANTED.test(f.name) || /\.(zip|oiv|rar|rpf)$/i.test(f.name) });
   const out: ModFile[] = [];
   for (const [name, bytes] of Object.entries(entries)) out.push(...(await expand(name, bytes)));
   return out;
@@ -46,7 +81,7 @@ async function expand(name: string, data: Uint8Array): Promise<ModFile[]> {
   if (lower.endsWith('.rar')) return fromRar(data);
   if (WANTED.test(lower)) return [{ name, base: baseName(name), data }];
   if (lower.endsWith('.7z')) throw new Error('Los archivos .7z no se admiten: descomprímelo y sube los .yft/.ytd o un .zip.');
-  if (lower.endsWith('.rpf')) throw new Error('Los .rpf no se admiten: extrae los .yft/.ytd con OpenIV o CodeWalker.');
+  if (lower.endsWith('.rpf')) return fromRpf(name, data);
   return [];
 }
 
@@ -69,7 +104,9 @@ export interface VehicleCandidate {
  */
 export function findVehicles(files: ModFile[]): VehicleCandidate[] {
   const yfts = files.filter((f) => f.base.endsWith('.yft'));
-  const ids = new Set(yfts.map((f) => f.base.replace(/\.yft$/, '').replace(/_hi$/, '')));
+  const all = new Set(yfts.map((f) => f.base.replace(/\.yft$/, '').replace(/_hi$/, '')));
+  // «modelx_bumf_1a», «modelx_wing_2»… son piezas de tuneo de «modelx», no vehículos.
+  const ids = new Set([...all].filter((id) => ![...all].some((other) => other !== id && id.startsWith(`${other}_`))));
   const result: VehicleCandidate[] = [];
   for (const id of ids) {
     // No se tratan como vehículo las piezas de tuneo sueltas (p. ej. «untesla_wing_1»).

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { Generation, Paint, Wheel } from '../catalog/types';
+import type { Generation, Paint, Wheel, WheelDesign, WheelFinish } from '../catalog/types';
+import { Icon } from './icons';
 import { useStore } from '../state/store';
 import { ENVIRONMENTS } from '../three/environments';
 import { captureImage, captureThumbnail } from '../utils/capture';
@@ -12,14 +13,15 @@ const FINISH_LABEL: Record<Paint['finish'], string> = {
   mate: 'Mate',
 };
 
-export type TabId = 'modelo' | 'pintura' | 'llantas' | 'entorno' | 'coches' | 'mas';
-export const TABS: { id: TabId; label: string }[] = [
-  { id: 'modelo', label: 'Modelo' },
-  { id: 'pintura', label: 'Pintura' },
-  { id: 'llantas', label: 'Llantas' },
-  { id: 'entorno', label: 'Entorno' },
-  { id: 'coches', label: 'Mis coches' },
-  { id: 'mas', label: 'Más' },
+export type TabId = 'modelo' | 'pintura' | 'llantas' | 'suspension' | 'entorno' | 'coches' | 'mas';
+export const TABS: { id: TabId; label: string; icon: () => React.JSX.Element }[] = [
+  { id: 'modelo', label: 'Modelo', icon: Icon.coche },
+  { id: 'pintura', label: 'Pintura', icon: Icon.pintura },
+  { id: 'llantas', label: 'Llantas', icon: Icon.llanta },
+  { id: 'suspension', label: 'Suspensión', icon: Icon.suspension },
+  { id: 'entorno', label: 'Entorno', icon: Icon.entorno },
+  { id: 'coches', label: 'Mis coches', icon: Icon.garaje },
+  { id: 'mas', label: 'Más', icon: Icon.mas },
 ];
 
 function useCurrent() {
@@ -28,7 +30,9 @@ function useCurrent() {
   const model = loaded.catalog.models.find((m) => m.id === config.modelId)!;
   const gen = model.generations.find((g) => g.id === config.generationId)!;
   const paints = loaded.catalog.paints.filter((p) => !gen.paints || gen.paints.includes(p.id));
-  const wheels = loaded.catalog.wheels.filter((w) => !gen.wheels || gen.wheels.includes(w.id));
+  const wheels = loaded.catalog.wheels.filter(
+    (w) => (!gen.wheels || gen.wheels.includes(w.id)) && !(gen.noOriginalWheels && w.design === 'original'),
+  );
   const paint = loaded.catalog.paints.find((p) => p.id === config.paintId);
   const wheel = loaded.catalog.wheels.find((w) => w.id === config.wheelId);
   return { loaded, config, model, gen, paints, wheels, paint, wheel };
@@ -46,7 +50,7 @@ export function summaryLines(): string[] {
   const env = ENVIRONMENTS.find((e) => e.id === c.environmentId);
   return [
     `${model?.name ?? ''} · ${gen?.label ?? ''}`,
-    `Pintura: ${paint?.name ?? ''} · Llantas: ${wheel?.name ?? ''}${wheel?.inches ? ` ${wheel.inches}″` : ''} · Entorno: ${env?.name ?? ''}`,
+    `Pintura: ${paint?.name ?? ''} · Llantas: ${wheel?.name ?? ''} ${l.catalog.wheelFinishes.find((f) => f.id === c.wheelFinishId)?.name.toLowerCase() ?? ''}${c.rimDelta ? ` (${c.rimDelta > 0 ? '+' : ''}${c.rimDelta}″)` : ''}${c.rideHeight ? ` · Suspensión ${c.rideHeight > 0 ? '+' : ''}${c.rideHeight} cm` : ''} · Entorno: ${env?.name ?? ''}`,
     `Modelo 3D: «${gen?.credits.title ?? ''}» de ${gen?.credits.author ?? ''} (${gen?.credits.license ?? ''})`,
   ];
 }
@@ -122,6 +126,14 @@ function ModelSection() {
   );
 }
 
+const FINISH_ORDER: Paint['finish'][] = ['metalizado', 'perlado', 'solido', 'mate'];
+const FINISH_GROUP: Record<Paint['finish'], string> = {
+  metalizado: 'Metalizados',
+  perlado: 'Perlados multicapa',
+  solido: 'Sólidos',
+  mate: 'Mates (vinilo)',
+};
+
 function PaintSection() {
   const { config, paints, paint } = useCurrent();
   const update = useStore((s) => s.update);
@@ -130,92 +142,201 @@ function PaintSection() {
       <h2>
         Pintura <small>{paint ? `${paint.name} · ${FINISH_LABEL[paint.finish]}` : ''}</small>
       </h2>
-      <div className="swatches">
-        {paints.map((p) => (
-          <button
-            key={p.id}
-            className={p.id === config.paintId ? 'swatch active' : 'swatch'}
-            onClick={() => update({ paintId: p.id })}
-            title={`${p.name} (${FINISH_LABEL[p.finish]})`}
-            aria-label={`${p.name}, ${FINISH_LABEL[p.finish]}`}
-            aria-pressed={p.id === config.paintId}
-          >
-            <span
-              className={`dot finish-${p.finish}`}
-              style={{ '--c': p.color, '--f': p.flopColor ?? p.color } as React.CSSProperties}
-            />
-            <span className="swatch-name">{p.name}</span>
-          </button>
-        ))}
-      </div>
+      {FINISH_ORDER.map((f) => {
+        const list = paints.filter((p) => p.finish === f);
+        if (!list.length) return null;
+        return (
+          <div key={f} className="paint-group">
+            <h3>{FINISH_GROUP[f]}</h3>
+            <div className="swatches">
+              {list.map((p) => (
+                <button
+                  key={p.id}
+                  className={p.id === config.paintId ? 'swatch active' : 'swatch'}
+                  onClick={() => update({ paintId: p.id })}
+                  title={`${p.name} (${FINISH_LABEL[p.finish]})`}
+                  aria-label={`${p.name}, ${FINISH_LABEL[p.finish]}`}
+                  aria-pressed={p.id === config.paintId}
+                >
+                  <span className={`dot finish-${p.finish}`} style={{ '--c': p.color, '--f': p.flopColor ?? p.color } as React.CSSProperties} />
+                  <span className="swatch-name">{p.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      <h3>Cristales y luces</h3>
+      <label className="field">
+        <span>
+          Tintado de lunas <b>{Math.round(config.glassTint * 100)} %</b>
+        </span>
+        <input type="range" min={0} max={1} step={0.05} value={config.glassTint} onChange={(e) => update({ glassTint: Number(e.target.value) })} />
+      </label>
+      <label className="toggle">
+        <input type="checkbox" checked={config.lightsOn} onChange={(e) => update({ lightsOn: e.target.checked })} />
+        <span>Luces encendidas</span>
+      </label>
     </section>
   );
 }
 
-function WheelPreview({ w }: { w: Wheel }) {
-  const n = { aero: 5, 'cinco-dobles': 10, multirradio: 10, turbina: 12, 'y-radios': 15, original: 0 }[w.design];
-  const color = w.finish?.color ?? '#9aa0a6';
+/** Miniatura SVG aproximada de cada diseño de llanta. */
+function WheelPreview({ design, finish }: { design: WheelDesign; finish?: WheelFinish }) {
+  const c = finish && finish.id !== 'original' ? finish.color : '#a9aeb3';
+  const dark = finish?.accent ?? '#1a1b1d';
+  const spoke = (a: number, w1: number, w2: number, r1 = 12, r2 = 40, curve = 0) => {
+    const p = (r: number, ang: number) => `${Math.cos(ang) * r},${Math.sin(ang) * r}`;
+    const A = (a * Math.PI) / 180;
+    return (
+      <path
+        key={`${a}-${curve}`}
+        d={`M${p(r1, A - w1 / r1)} Q${p((r1 + r2) / 2, A + curve * 0.5)} ${p(r2, A - w2 / r2 + curve)} L${p(r2, A + w2 / r2 + curve)} Q${p((r1 + r2) / 2, A + curve * 0.5)} ${p(r1, A + w1 / r1)}Z`}
+        fill={c}
+      />
+    );
+  };
+  const n = (k: number) => Array.from({ length: k }, (_, i) => (i * 360) / k);
+  let body: React.ReactNode = null;
+  switch (design) {
+    case 'aero':
+    case 'disco':
+      body = (
+        <>
+          <circle r="40" fill={c} />
+          {n(design === 'aero' ? 5 : 10).map((a) => (
+            <path key={a} d={`M${Math.cos((a * Math.PI) / 180) * 30},${Math.sin((a * Math.PI) / 180) * 30} A30 30 0 0 1 ${Math.cos(((a + (design === 'aero' ? 34 : 12)) * Math.PI) / 180) * 30},${Math.sin(((a + (design === 'aero' ? 34 : 12)) * Math.PI) / 180) * 30}`} stroke={dark} strokeWidth={design === 'aero' ? 8 : 4} fill="none" />
+          ))}
+        </>
+      );
+      break;
+    case 'cinco-dobles':
+      body = n(5).flatMap((a) => [spoke(a - 7, 3, 3), spoke(a + 7, 3, 3)]);
+      break;
+    case 'multirradio':
+      body = n(10).map((a) => spoke(a, 3, 2.2));
+      break;
+    case 'turbina':
+      body = n(12).map((a) => spoke(a, 2.6, 4, 12, 40, 0.35));
+      break;
+    case 'y-radios':
+      body = n(5).flatMap((a) => [spoke(a, 4, 3, 12, 24), spoke(a - 9, 2, 2.5, 22, 40), spoke(a + 9, 2, 2.5, 22, 40)]);
+      break;
+    case 'seis-radios':
+      body = n(6).map((a) => spoke(a, 5, 6));
+      break;
+    case 'concava':
+      body = n(5).map((a) => spoke(a, 6, 4));
+      break;
+    case 'estrella':
+      body = n(7).map((a) => spoke(a, 2, 1.6));
+      break;
+    case 'radios-finos':
+      body = n(20).map((a) => spoke(a, 1, 0.8));
+      break;
+    case 'malla':
+      body = n(10).flatMap((a) => [spoke(a, 1.4, 1.2, 12, 40, 0.3), spoke(a, 1.4, 1.2, 12, 40, -0.3)]);
+      break;
+    default:
+      body = (
+        <text y="5" textAnchor="middle" fontSize="13" fill="#ddd" fontWeight="600">
+          ORIG.
+        </text>
+      );
+  }
   return (
     <svg viewBox="-50 -50 100 100" className="wheel-svg" aria-hidden>
-      <circle r="48" fill="#111" />
-      <circle r="40" fill={w.design === 'aero' ? color : '#222'} stroke={color} strokeWidth="3" />
-      {w.design === 'original' ? (
-        <text y="6" textAnchor="middle" fontSize="16" fill="#ddd">
-          3D
-        </text>
-      ) : (
-        Array.from({ length: n }).map((_, i) => (
-          <rect
-            key={i}
-            x="-3"
-            y="-39"
-            width="6"
-            height="28"
-            rx="2"
-            fill={w.design === 'aero' ? '#111' : color}
-            transform={`rotate(${(i * 360) / n}) ${w.design === 'turbina' ? 'skewX(18)' : ''}`}
-          />
-        ))
-      )}
-      <circle r="10" fill={color} />
+      <circle r="49" fill="#0b0b0c" />
+      <circle r="41.5" fill={dark} stroke={c} strokeWidth="2.5" />
+      {body}
+      {design !== 'original' && <circle r="11" fill={c} stroke={dark} strokeWidth="1.5" />}
     </svg>
   );
 }
 
 function WheelSection() {
-  const { config, wheels, gen } = useCurrent();
+  const { config, wheels, gen, loaded } = useCurrent();
   const update = useStore((s) => s.update);
-  const allCalipers = useStore((s) => s.loaded!.catalog.caliperColors ?? []);
-  const selected = wheels.find((w) => w.id === config.wheelId);
+  const finishes = loaded.catalog.wheelFinishes;
+  const wheel = wheels.find((w) => w.id === config.wheelId);
+  const finish = finishes.find((f) => f.id === config.wheelFinishId);
+  const allCalipers = loaded.catalog.caliperColors ?? [];
   // Las pinzas solo se pueden colorear si el modelo las tiene separadas o si
   // se usa un diseño de llanta alternativo (que incluye sus propias pinzas).
-  const calipers = (gen.parts.calipers?.length ?? 0) > 0 || selected?.design !== 'original' ? allCalipers : [];
+  const calipers = (gen.parts.calipers?.length ?? 0) > 0 || wheel?.design !== 'original' ? allCalipers : [];
+  const baseInches = gen.originalWheelInches ?? 19;
+  const available = finishes.filter((f) => f.id !== 'original' || wheel?.design === 'original');
   return (
     <section className="section">
-      <h2>Llantas</h2>
+      <h2>
+        Llantas <small>{wheel ? `${wheel.name} · ${finish?.name ?? ''}` : ''}</small>
+      </h2>
       <div className="wheels">
-        {wheels.map((w) => (
+        {wheels.map((w: Wheel) => (
           <button
             key={w.id}
             className={w.id === config.wheelId ? 'wheel-card active' : 'wheel-card'}
             onClick={() => update({ wheelId: w.id })}
             aria-pressed={w.id === config.wheelId}
+            title={w.description}
           >
-            <WheelPreview w={w} />
-            <span className="wheel-name">
-              {w.name}
-              {w.inches ? ` ${w.inches}″` : w.design === 'original' && gen.originalWheelInches ? ` ${gen.originalWheelInches}″` : ''}
-            </span>
-            {w.description && <span className="wheel-desc">{w.description}</span>}
+            <WheelPreview design={w.design} finish={w.id === config.wheelId ? finish : finishes.find((f) => f.id === w.defaultFinish)} />
+            <span className="wheel-name">{w.name}</span>
           </button>
         ))}
       </div>
+
+      <h3>Acabado</h3>
+      <div className="finishes">
+        {available.map((f) => (
+          <button
+            key={f.id}
+            className={f.id === config.wheelFinishId ? 'finish active' : 'finish'}
+            onClick={() => update({ wheelFinishId: f.id })}
+            title={f.name}
+            aria-pressed={f.id === config.wheelFinishId}
+          >
+            <span
+              className="finish-dot"
+              style={{
+                background:
+                  f.id === 'original'
+                    ? 'conic-gradient(#888, #ddd, #555, #bbb, #888)'
+                    : `radial-gradient(circle at 35% 30%, color-mix(in srgb, ${f.color} ${f.metalness > 0.5 ? 45 : 70}%, white), ${f.color} 55%, ${f.accent ?? `color-mix(in srgb, ${f.color} 60%, black)`})`,
+              }}
+            />
+            <span>{f.name}</span>
+          </button>
+        ))}
+      </div>
+
+      <h3>Diámetro</h3>
+      <div className="size-row">
+        <span className="size-value">
+          {baseInches + config.rimDelta}″
+          <small>{config.rimDelta === 0 ? 'de serie' : `${config.rimDelta > 0 ? '+' : ''}${config.rimDelta}″`}</small>
+        </span>
+        <input
+          type="range"
+          min={-3}
+          max={4}
+          step={1}
+          value={config.rimDelta}
+          aria-label="Diámetro de llanta"
+          onChange={(e) => update({ rimDelta: Number(e.target.value) })}
+        />
+      </div>
+      <p className="note">
+        Al aumentar la llanta, el neumático reduce su perfil y conserva el diámetro exterior, como en un cambio real de
+        medida.
+      </p>
+
       {calipers.length > 0 && (
         <>
           <h3>Pinzas de freno</h3>
           <div className="segmented wrap">
             <button className={!config.caliperId ? 'active' : ''} onClick={() => update({ caliperId: null })}>
-              Originales
+              De serie
             </button>
             {calipers.map((c) => (
               <button key={c.id} className={config.caliperId === c.id ? 'active' : ''} onClick={() => update({ caliperId: c.id })}>
@@ -225,22 +346,53 @@ function WheelSection() {
           </div>
         </>
       )}
-      <h3>Cristales y luces</h3>
+    </section>
+  );
+}
+
+const RIDE_PRESETS = [
+  { cm: 3, label: 'Elevada', sub: '+3 cm' },
+  { cm: 0, label: 'De serie', sub: '0 cm' },
+  { cm: -3, label: 'Deportiva', sub: '−3 cm' },
+  { cm: -5, label: 'Rebajada', sub: '−5 cm' },
+  { cm: -7, label: 'Muy rebajada', sub: '−7 cm' },
+];
+
+function SuspensionSection() {
+  const config = useStore((s) => s.config);
+  const update = useStore((s) => s.update);
+  const fmt = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v)} cm`;
+  return (
+    <section className="section">
+      <h2>
+        Suspensión <small>{config.rideHeight === 0 ? 'altura de serie' : fmt(config.rideHeight)}</small>
+      </h2>
+      <div className="presets">
+        {RIDE_PRESETS.map((p) => (
+          <button key={p.cm} className={config.rideHeight === p.cm ? 'preset active' : 'preset'} onClick={() => update({ rideHeight: p.cm })}>
+            <strong>{p.label}</strong>
+            <span>{p.sub}</span>
+          </button>
+        ))}
+      </div>
       <label className="field">
-        <span>Tintado de lunas: {Math.round(config.glassTint * 100)} %</span>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.05}
-          value={config.glassTint}
-          onChange={(e) => update({ glassTint: Number(e.target.value) })}
-        />
+        <span>
+          Altura libre <b>{fmt(config.rideHeight)}</b>
+        </span>
+        <input type="range" min={-8} max={5} step={0.5} value={config.rideHeight} onChange={(e) => update({ rideHeight: Number(e.target.value) })} />
       </label>
-      <label className="toggle">
-        <input type="checkbox" checked={config.lightsOn} onChange={(e) => update({ lightsOn: e.target.checked })} />
-        <span>Luces encendidas</span>
-      </label>
+      <p className="note">
+        Sube o baja la carrocería respecto a las ruedas. Combínalo con llantas más grandes para un aspecto deportivo; usa
+        la vista lateral para comparar el hueco del paso de rueda.
+      </p>
+      <div className="row">
+        <button className="btn" onClick={() => useStore.getState().setView('lateral')}>
+          Ver de lado
+        </button>
+        <button className="btn" onClick={() => useStore.getState().setView('llanta')}>
+          Ver la rueda
+        </button>
+      </div>
     </section>
   );
 }
@@ -466,6 +618,7 @@ export function PanelContent({ tab }: { tab: TabId | 'all' }) {
       {show('modelo') && <ModelSection />}
       {show('pintura') && <PaintSection />}
       {show('llantas') && <WheelSection />}
+      {show('suspension') && <SuspensionSection />}
       {show('entorno') && <EnvironmentSection />}
       {show('coches') && <ModsSection />}
       {show('mas') && <SaveExportSection />}

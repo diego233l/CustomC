@@ -5,7 +5,7 @@
 import { createExtractorFromData } from 'node-unrar-js';
 import wasmUrl from 'node-unrar-js/esm/js/unrar.wasm?url';
 
-const WANTED = /\.(yft|ytd|ydr|zip|oiv|rar)$/i;
+const WANTED = /\.(yft|ytd|ydr|zip|oiv|rar|rpf)$/i;
 
 self.onmessage = async (e: MessageEvent<ArrayBuffer>) => {
   try {

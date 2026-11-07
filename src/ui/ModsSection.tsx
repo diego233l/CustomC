@@ -17,7 +17,25 @@ import {
 } from '../utils/modsApi';
 
 const MODEL_ID = 'mis-coches';
-const ACCEPT = '.rar,.zip,.oiv,.yft,.ytd';
+
+export const DESTINOS: { id: string; label: string }[] = [
+  { id: 'model-s', label: 'Sustituir al Tesla Model S' },
+  { id: 'model-3', label: 'Sustituir al Tesla Model 3' },
+  { id: 'model-x', label: 'Sustituir al Tesla Model X' },
+  { id: 'model-y', label: 'Sustituir al Tesla Model Y' },
+  { id: 'mis-coches', label: 'Guardar en «Mis coches»' },
+];
+
+/** Adivina el modelo a partir de los nombres del archivo y del vehículo. */
+export function guessTarget(text: string): string {
+  const t = text.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+  if (/\bmodel ?x\b|\bmodelx\b|p90d|p100d|\bmx\b/.test(t)) return 'model-x';
+  if (/\bmodel ?y\b|\bmodely\b/.test(t)) return 'model-y';
+  if (/\bmodel ?3\b|\bmodel3\b|highland/.test(t)) return 'model-3';
+  if (/\bmodel ?s\b|\bmodels\b|plaid/.test(t)) return 'model-s';
+  return 'mis-coches';
+}
+const ACCEPT = '.rar,.zip,.oiv,.rpf,.yft,.ytd';
 
 const pretty = (id: string) =>
   id
@@ -40,6 +58,7 @@ export function ModsSection() {
   const [name, setName] = useState('');
   const [author, setAuthor] = useState('');
   const [source, setSource] = useState('');
+  const [target, setTarget] = useState('mis-coches');
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +96,7 @@ export function ModsSection() {
       setCandidates(found);
       setChosen(found[0].id);
       setName(pretty(found[0].id));
+      setTarget(guessTarget(`${list.map((f) => f.name).join(' ')} ${found[0].id}`));
       setProgress(null);
     } catch (e) {
       setError((e as Error).message);
@@ -102,6 +122,7 @@ export function ModsSection() {
         autor: author.trim(),
         origen: source.trim(),
         vehiculo: cand.id,
+        destino: target,
         archivoOriginal: originalName,
         longitud: result.report.lengthMeters,
         informe: result.report as unknown as Record<string, unknown>,
@@ -113,7 +134,7 @@ export function ModsSection() {
         await uploadFile(id, 'original', files[0], (f) => setProgress(`Guardando original ${Math.round(f * 100)} %…`));
       await finishMod(id);
       setProgress('Cargando el coche en el configurador…');
-      await reloadCatalog({ modelId: MODEL_ID, generationId: id });
+      await reloadCatalog({ modelId: target, generationId: id });
       await refresh();
       setFiles([]);
       setCandidates([]);
@@ -148,6 +169,16 @@ export function ModsSection() {
     try {
       await deleteMod(m.id);
       await reloadCatalog(config.generationId === m.id ? { modelId: '', generationId: '' } : undefined);
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const reassign = async (m: ModMeta, destino: string) => {
+    try {
+      await updateMod(m.id, { destino });
+      await reloadCatalog({ modelId: destino, generationId: m.id });
       await refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -189,17 +220,30 @@ export function ModsSection() {
             <li key={m.id}>
               <button
                 className={config.generationId === m.id ? 'saved-main active' : 'saved-main'}
-                onClick={() => useStore.getState().update({ modelId: MODEL_ID, generationId: m.id })}
+                onClick={() => useStore.getState().update({ modelId: m.destino ?? MODEL_ID, generationId: m.id })}
                 title="Ver en el configurador"
               >
                 <img src={`mods/${m.id}/miniatura.jpg`} alt="" onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')} />
                 <span>
                   <strong>{m.nombre}</strong>
                   <small>
-                    {m.vehiculo} · {new Date(m.creado).toLocaleDateString('es-ES')}
+                    {DESTINOS.find((d) => d.id === (m.destino ?? MODEL_ID))?.label.replace('Sustituir al ', 'Sustituye al ').replace('Guardar en «Mis coches»', 'En «Mis coches»')} · {m.vehiculo}
                   </small>
                 </span>
               </button>
+              <select
+                className="icon-select"
+                aria-label={`Destino de ${m.nombre}`}
+                title="Cambiar a qué modelo sustituye"
+                value={m.destino ?? MODEL_ID}
+                onChange={(e) => reassign(m, e.target.value)}
+              >
+                {DESTINOS.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
               <button className="icon-btn" aria-label={`Renombrar ${m.nombre}`} title="Renombrar" onClick={() => rename(m)}>
                 ✎
               </button>
@@ -249,7 +293,7 @@ export function ModsSection() {
             onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && inputRef.current?.click()}
           >
             <strong>{files.length ? files.map((f) => f.name).join(', ') : 'Arrastra aquí el mod o pulsa para elegirlo'}</strong>
-            <span>.rar, .zip, .oiv o los archivos .yft y .ytd (versión de PC del juego)</span>
+            <span>.rar, .zip, .oiv, .rpf o los archivos .yft y .ytd (versión de PC del juego)</span>
             <input
               ref={inputRef}
               type="file"
@@ -280,6 +324,16 @@ export function ModsSection() {
                   </select>
                 </label>
               )}
+              <label className="field">
+                <span>Usar como</span>
+                <select value={target} onChange={(e) => setTarget(e.target.value)}>
+                  {DESTINOS.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label className="field">
                 <span>Nombre</span>
                 <input className="text" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />

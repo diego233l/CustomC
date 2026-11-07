@@ -38,13 +38,6 @@
               "Philippine_License_Plate_Recovered"
             ]
           },
-          "wheels": [
-            "original",
-            "original-negro",
-            "original-grafito",
-            "ms-aero-19",
-            "ms-multirradio-21"
-          ],
           "defaultPaint": "blanco-perla",
           "credits": {
             "title": "Tesla Model S Plaid 2021",
@@ -54,7 +47,8 @@
             "license": "CC BY 4.0",
             "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
             "modifications": "Convertido a GLB, compresión Meshopt y texturas WebP; matrícula ocultada; materiales sustituidos en tiempo real."
-          }
+          },
+          "defaultWheel": "original"
         }
       ]
     },
@@ -101,14 +95,6 @@
               "platnomor.2"
             ]
           },
-          "wheels": [
-            "original",
-            "original-negro",
-            "original-grafito",
-            "m3-aero-18",
-            "m3-deportiva-19",
-            "m3-turbina-20"
-          ],
           "defaultPaint": "azul-ultramar",
           "credits": {
             "title": "Tesla 2018 Model 3",
@@ -118,7 +104,8 @@
             "license": "CC BY 4.0",
             "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
             "modifications": "Convertido a GLB, compresión Meshopt y texturas WebP; matrícula ocultada; materiales sustituidos en tiempo real."
-          }
+          },
+          "defaultWheel": "original"
         }
       ]
     },
@@ -177,13 +164,6 @@
               "DarkRed"
             ]
           },
-          "wheels": [
-            "original",
-            "original-negro",
-            "original-grafito",
-            "mx-aero-20",
-            "mx-turbina-22"
-          ],
           "defaultPaint": "negro-diamante",
           "credits": {
             "title": "Tesla Model X (Part 1 / Part 2)",
@@ -194,7 +174,8 @@
             "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
             "modifications": "Versión depurada publicada por el proyecto «Million Dollar Model X» (sin logotipos ni matrículas, geometría duplicada eliminada, Meshopt); recomprimida para este configurador."
           },
-          "note": "En este modelo la pintura comparte material con algunas piezas interiores y del paso de rueda, por lo que pueden adoptar también el color elegido."
+          "note": "En este modelo la pintura comparte material con algunas piezas interiores y del paso de rueda, por lo que pueden adoptar también el color elegido.",
+          "defaultWheel": "original"
         }
       ]
     },
@@ -239,14 +220,6 @@
               "Carro_Freio"
             ]
           },
-          "wheels": [
-            "original",
-            "original-negro",
-            "original-grafito",
-            "my-aero-19",
-            "my-y-20",
-            "my-turbina-21"
-          ],
           "defaultPaint": "gris-estelar",
           "credits": {
             "title": "2021 Tesla Model Y",
@@ -256,7 +229,8 @@
             "license": "CC BY 4.0",
             "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
             "modifications": "Convertido a GLB, compresión Meshopt y texturas WebP; materiales sustituidos en tiempo real."
-          }
+          },
+          "defaultWheel": "original"
         }
       ]
     }
@@ -349,210 +323,85 @@
       "id": "original",
       "name": "Originales",
       "design": "original",
-      "description": "Llantas del modelo 3D"
+      "description": "Diseño del modelo 3D",
+      "defaultFinish": "original"
     },
     {
-      "id": "original-negro",
-      "name": "Originales negro brillo",
-      "design": "original",
-      "finish": {
-        "color": "#0d0d0e",
-        "metalness": 0.3,
-        "roughness": 0.18,
-        "clearcoat": 1
-      },
-      "description": "Mismo diseño, acabado negro"
-    },
-    {
-      "id": "original-grafito",
-      "name": "Originales grafito",
-      "design": "original",
-      "finish": {
-        "color": "#3a3d41",
-        "metalness": 0.9,
-        "roughness": 0.35
-      },
-      "description": "Mismo diseño, acabado grafito"
-    },
-    {
-      "id": "m3-aero-18",
+      "id": "aero",
       "name": "Aero",
-      "inches": 18,
       "design": "aero",
-      "finish": {
-        "color": "#9ea3a8",
-        "metalness": 0.85,
-        "roughness": 0.3
-      },
-      "description": "Tapa aerodinámica · genérica"
+      "description": "Tapa aerodinámica",
+      "defaultFinish": "plata"
     },
     {
-      "id": "m3-deportiva-19",
-      "name": "Deportiva",
-      "inches": 19,
-      "design": "cinco-dobles",
-      "finish": {
-        "color": "#2b2e32",
-        "metalness": 0.9,
-        "roughness": 0.35
-      },
-      "description": "5 radios dobles · genérica"
-    },
-    {
-      "id": "m3-turbina-20",
+      "id": "turbina",
       "name": "Turbina",
-      "inches": 20,
       "design": "turbina",
-      "finish": {
-        "color": "#111214",
-        "metalness": 0.4,
-        "roughness": 0.2,
-        "clearcoat": 1
-      },
-      "description": "Radios curvos · genérica"
+      "description": "12 radios curvos",
+      "defaultFinish": "negro-brillo"
     },
     {
-      "id": "my-aero-19",
-      "name": "Aero",
-      "inches": 19,
-      "design": "aero",
-      "finish": {
-        "color": "#2a2c30",
-        "metalness": 0.8,
-        "roughness": 0.35
-      },
-      "description": "Tapa aerodinámica · genérica"
-    },
-    {
-      "id": "my-y-20",
-      "name": "Radios en Y",
-      "inches": 20,
-      "design": "y-radios",
-      "finish": {
-        "color": "#3a3d41",
-        "metalness": 0.9,
-        "roughness": 0.3
-      },
-      "description": "5 radios en Y · genérica"
-    },
-    {
-      "id": "my-turbina-21",
-      "name": "Turbina",
-      "inches": 21,
-      "design": "turbina",
-      "finish": {
-        "color": "#111214",
-        "metalness": 0.4,
-        "roughness": 0.2,
-        "clearcoat": 1
-      },
-      "description": "Radios curvos · genérica"
-    },
-    {
-      "id": "ms-aero-19",
-      "name": "Aero",
-      "inches": 19,
-      "design": "aero",
-      "finish": {
-        "color": "#b4b8bc",
-        "metalness": 0.9,
-        "roughness": 0.25
-      },
-      "description": "Tapa aerodinámica · genérica"
-    },
-    {
-      "id": "ms-multirradio-21",
-      "name": "Multirradio",
-      "inches": 21,
-      "design": "multirradio",
-      "finish": {
-        "color": "#1a1b1e",
-        "metalness": 0.5,
-        "roughness": 0.25,
-        "clearcoat": 1
-      },
-      "description": "10 radios · genérica"
-    },
-    {
-      "id": "mx-aero-20",
-      "name": "Aero",
-      "inches": 20,
-      "design": "aero",
-      "finish": {
-        "color": "#a9adb2",
-        "metalness": 0.85,
-        "roughness": 0.3
-      },
-      "description": "Tapa aerodinámica · genérica"
-    },
-    {
-      "id": "mx-turbina-22",
-      "name": "Turbina",
-      "inches": 22,
-      "design": "turbina",
-      "finish": {
-        "color": "#16171a",
-        "metalness": 0.5,
-        "roughness": 0.22,
-        "clearcoat": 1
-      },
-      "description": "Radios curvos · genérica"
-    },
-    {
-      "id": "gen-aero",
-      "name": "Aero",
-      "design": "aero",
-      "finish": {
-        "color": "#a9adb2",
-        "metalness": 0.85,
-        "roughness": 0.3
-      },
-      "description": "Tapa aerodinámica · genérica"
-    },
-    {
-      "id": "gen-deportiva",
+      "id": "deportiva",
       "name": "Deportiva",
       "design": "cinco-dobles",
-      "finish": {
-        "color": "#2b2e32",
-        "metalness": 0.9,
-        "roughness": 0.35
-      },
-      "description": "5 radios dobles · genérica"
+      "description": "5 radios dobles",
+      "defaultFinish": "grafito"
     },
     {
-      "id": "gen-turbina",
-      "name": "Turbina",
-      "design": "turbina",
-      "finish": {
-        "color": "#141518",
-        "metalness": 0.45,
-        "roughness": 0.22,
-        "clearcoat": 1
-      },
-      "description": "Radios curvos · genérica"
+      "id": "concava",
+      "name": "Cóncava",
+      "design": "concava",
+      "description": "5 radios muy cóncavos",
+      "defaultFinish": "mecanizada"
     },
     {
-      "id": "gen-multirradio",
-      "name": "Multirradio",
-      "design": "multirradio",
-      "finish": {
-        "color": "#b4b8bc",
-        "metalness": 0.9,
-        "roughness": 0.25
-      },
-      "description": "10 radios · genérica"
+      "id": "seis-radios",
+      "name": "Seis radios",
+      "design": "seis-radios",
+      "description": "6 radios anchos",
+      "defaultFinish": "plata"
     },
     {
-      "id": "gen-y",
+      "id": "y-radios",
       "name": "Radios en Y",
       "design": "y-radios",
-      "finish": {
-        "color": "#3a3d41",
-        "metalness": 0.9,
-        "roughness": 0.3
-      },
-      "description": "5 radios en Y · genérica"
+      "description": "5 radios en Y",
+      "defaultFinish": "grafito"
+    },
+    {
+      "id": "multirradio",
+      "name": "Multirradio",
+      "design": "multirradio",
+      "description": "10 radios",
+      "defaultFinish": "negro-brillo"
+    },
+    {
+      "id": "malla",
+      "name": "Malla",
+      "design": "malla",
+      "description": "Radios cruzados de competición",
+      "defaultFinish": "oro"
+    },
+    {
+      "id": "estrella",
+      "name": "Estrella",
+      "design": "estrella",
+      "description": "7 radios finos",
+      "defaultFinish": "plata"
+    },
+    {
+      "id": "radios-finos",
+      "name": "Radios finos",
+      "design": "radios-finos",
+      "description": "20 radios",
+      "defaultFinish": "grafito"
+    },
+    {
+      "id": "disco",
+      "name": "Disco",
+      "design": "disco",
+      "description": "Cerrada de baja resistencia",
+      "defaultFinish": "blanco"
     }
   ],
   "caliperColors": [
@@ -570,6 +419,88 @@
       "id": "amarillo",
       "name": "Amarillas",
       "color": "#d9a700"
+    }
+  ],
+  "wheelFinishes": [
+    {
+      "id": "original",
+      "name": "Original del modelo",
+      "color": "#9aa0a6",
+      "metalness": 0.8,
+      "roughness": 0.3
+    },
+    {
+      "id": "plata",
+      "name": "Plata",
+      "color": "#c4c8cc",
+      "metalness": 0.8,
+      "roughness": 0.26,
+      "clearcoat": 0.8
+    },
+    {
+      "id": "mecanizada",
+      "name": "Mecanizada bitono",
+      "color": "#d8dadc",
+      "metalness": 0.85,
+      "roughness": 0.18,
+      "clearcoat": 1,
+      "accent": "#1b1c1e"
+    },
+    {
+      "id": "grafito",
+      "name": "Grafito",
+      "color": "#3b3e42",
+      "metalness": 0.9,
+      "roughness": 0.32,
+      "clearcoat": 0.6
+    },
+    {
+      "id": "negro-brillo",
+      "name": "Negro brillo",
+      "color": "#0c0c0d",
+      "metalness": 0.3,
+      "roughness": 0.12,
+      "clearcoat": 1
+    },
+    {
+      "id": "negro-mate",
+      "name": "Negro mate",
+      "color": "#111214",
+      "metalness": 0.2,
+      "roughness": 0.75,
+      "clearcoat": 0
+    },
+    {
+      "id": "bronce",
+      "name": "Bronce",
+      "color": "#6e5134",
+      "metalness": 1,
+      "roughness": 0.3,
+      "clearcoat": 0.7
+    },
+    {
+      "id": "oro",
+      "name": "Oro champán",
+      "color": "#a88a52",
+      "metalness": 1,
+      "roughness": 0.25,
+      "clearcoat": 0.7
+    },
+    {
+      "id": "blanco",
+      "name": "Blanco",
+      "color": "#e8e8e6",
+      "metalness": 0.1,
+      "roughness": 0.25,
+      "clearcoat": 1
+    },
+    {
+      "id": "cromo",
+      "name": "Cromo",
+      "color": "#e6e8ea",
+      "metalness": 1,
+      "roughness": 0.05,
+      "clearcoat": 1
     }
   ]
 }
