@@ -18,22 +18,31 @@ COPY scripts ./scripts
 RUN npm run catalog:validate && npm run build
 
 # ---------------------------------------------------------------------------
-# Etapa 2: servidor web mínimo, sin root, solo lectura.
+# Etapa 2: servidor Node.js mínimo (sin dependencias), sin root, solo lectura.
 # ---------------------------------------------------------------------------
-FROM nginxinc/nginx-unprivileged:1.29-alpine
+FROM node:22-alpine
 ARG VERSION=dev
 ARG REVISION=unknown
 LABEL org.opencontainers.image.title="Configurador Tesla 3D" \
-      org.opencontainers.image.description="Configurador 3D web de Tesla Model S, 3, X e Y" \
+      org.opencontainers.image.description="Configurador 3D web de Tesla Model S, 3, X e Y con importación de mods de GTA V" \
       org.opencontainers.image.source="https://github.com/diego233l/CustomC" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}" \
       org.opencontainers.image.licenses="MIT"
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY docker/security-headers.conf /etc/nginx/snippets/security-headers.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+ENV NODE_ENV=production \
+    PORT=8080 \
+    STATIC_DIR=/app/dist \
+    CUSTOM_DIR=/srv/configurador/custom \
+    DATA_DIR=/data
+WORKDIR /app
+COPY --from=build /app/dist /app/dist
+COPY server/server.mjs /app/server.mjs
 COPY docker/custom-README.txt /srv/configurador/custom/LEEME.txt
-USER 101
+RUN mkdir -p /data && chown 99:100 /data
+# Unraid usa por convención el usuario nobody (99) y el grupo users (100).
+USER 99:100
+VOLUME ["/data"]
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1
+CMD ["node", "/app/server.mjs"]

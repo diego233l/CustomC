@@ -13,7 +13,8 @@ Configurador web en 3D, en español, para ver los Tesla Model S, Model 3, Model 
 | Imagen | `ghcr.io/diego233l/customc:latest` |
 | Carpeta en Unraid | `/mnt/user/appdata/configurador-tesla` |
 | Puerto por defecto | **8100** → `http://IP-DE-TU-UNRAID:8100` |
-| Modelos propios | `/mnt/user/appdata/configurador-tesla/modelos` |
+| Modelos propios (catálogo JSON) | `/mnt/user/appdata/configurador-tesla/modelos` |
+| Coches subidos (mods de GTA V) | `/mnt/user/appdata/configurador-tesla/datos` |
 
 **Comando único de actualización** (una sola línea, copiar y pegar en la terminal de Unraid):
 
@@ -34,6 +35,7 @@ cd /mnt/user/appdata/configurador-tesla && docker compose pull && docker compose
 - **Vistas de cámara**: 3/4 delantera, frontal, lateral, 3/4 trasera, trasera, cenital y detalle de llanta.
 - **Guardar configuraciones** en el navegador (con miniatura), enlace para compartir la configuración y **exportar imagen** PNG (normal o 2×) con un pie que resume la configuración.
 - **Calidad gráfica** alta / media / baja (oclusión ambiental, suelo reflectante, antialias) para adaptarse a PC, tablet o móvil.
+- **Mis coches: subir mods de GTA V** (.rar, .zip, .oiv o .yft/.ytd sueltos). Se convierten en el navegador a GLB, se guardan en el servidor y aparecen en todos los dispositivos con las mismas opciones de pintura, llantas, luces y entornos. Ver «Subir coches (mods de GTA V)».
 - **Inspector de materiales** para preparar nuevos modelos 3D.
 - Funciona **sin Internet** en la red local: todos los recursos se sirven desde el contenedor.
 
@@ -69,10 +71,10 @@ Modificaciones aplicadas: conversión a GLB, compresión de geometría Meshopt (
 
 1. **Instala el plugin «Docker Compose Manager»** desde *Apps* (Community Applications). Añade el comando `docker compose` a Unraid.
 
-2. **Abre la terminal de Unraid** (icono `>_` arriba a la derecha) y crea la carpeta del proyecto con el archivo Compose:
+2. **Abre la terminal de Unraid** (icono `>_` arriba a la derecha) y crea la carpeta del proyecto con el archivo Compose. La carpeta `datos` debe pertenecer al usuario `nobody:users` (99:100), con el que se ejecuta el contenedor, para poder guardar los coches subidos:
 
    ```bash
-   mkdir -p /mnt/user/appdata/configurador-tesla/modelos && cd /mnt/user/appdata/configurador-tesla && wget -O docker-compose.yml https://raw.githubusercontent.com/diego233l/CustomC/HEAD/docker-compose.yml
+   mkdir -p /mnt/user/appdata/configurador-tesla/modelos /mnt/user/appdata/configurador-tesla/datos && chown 99:100 /mnt/user/appdata/configurador-tesla/datos && cd /mnt/user/appdata/configurador-tesla && wget -O docker-compose.yml https://raw.githubusercontent.com/diego233l/CustomC/HEAD/docker-compose.yml
    ```
 
 3. **(Opcional) Cambia el puerto.** Por defecto es el 8100. Para usar otro, crea un archivo `.env` en la misma carpeta:
@@ -105,7 +107,7 @@ Si usas la interfaz de Compose Manager, en la pestaña *Docker* → *Compose* �
 cd /mnt/user/appdata/configurador-tesla && docker compose pull && docker compose up -d
 ```
 
-Descarga la imagen nueva y recrea el contenedor; los modelos de la carpeta `modelos` y el puerto configurado se conservan. Para liberar espacio de imágenes antiguas puedes añadir `&& docker image prune -f` al final.
+Descarga la imagen nueva y recrea el contenedor; los coches subidos (`datos`), los modelos de `modelos` y el puerto configurado (`.env`) se conservan. Para liberar espacio de imágenes antiguas puedes añadir `&& docker image prune -f` al final.
 
 ### Reinicio automático
 
@@ -113,8 +115,9 @@ El servicio usa `restart: unless-stopped`: Docker vuelve a arrancarlo al reinici
 
 ### Seguridad
 
-- Servidor nginx sin privilegios (usuario no root), sistema de archivos de solo lectura, sin capacidades de Linux (`cap_drop: ALL`) y `no-new-privileges`.
-- La carpeta de modelos se monta en solo lectura.
+- Servidor Node.js propio sin dependencias externas, ejecutado como `nobody:users` (no root), sistema de archivos de solo lectura salvo la carpeta `datos`, sin capacidades de Linux (`cap_drop: ALL`) y `no-new-privileges`.
+- La carpeta de modelos se monta en solo lectura. La API de subida valida identificadores, nombres de archivo, tamaño máximo y formato (GLB/JPEG) y no permite salir de su carpeta.
+- Sin autenticación por defecto (pensado para la red local). Para exigir una clave al subir/borrar coches, añade `CLAVE_SUBIDAS=tu-clave` al `.env`; para desactivar las subidas, `SUBIDAS=false`.
 - Cabeceras de seguridad (CSP, `nosniff`, etc.). No hay credenciales en el código, la imagen ni los archivos del repositorio: la publicación usa el `GITHUB_TOKEN` temporal de GitHub Actions.
 - Pensado para la red local; si lo expones a Internet, ponlo detrás de un proxy inverso con HTTPS y autenticación.
 
@@ -122,6 +125,36 @@ El servicio usa `restart: unless-stopped`: Docker vuelve a arrancarlo al reinici
 
 ```bash
 git clone https://github.com/diego233l/CustomC /mnt/user/appdata/configurador-tesla-src && cd /mnt/user/appdata/configurador-tesla-src && docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
+
+---
+
+## Subir coches (mods de GTA V)
+
+En la pestaña **«Mis coches»** puedes subir un mod de vehículo de GTA V (versión de PC) para verlo y personalizarlo en el configurador:
+
+1. Arrastra el archivo del mod (`.rar`, `.zip`, `.oiv`) o selecciona juntos sus `.yft` y `.ytd`.
+2. Revisa el nombre (y, si quieres, el autor y el enlace del mod) y pulsa **«Convertir y guardar»**.
+3. El navegador lo convierte a GLB (unos segundos), lo sube al servidor y lo selecciona. Queda guardado en `datos/mods/` y aparece en el selector de modelo, en «Mis coches», desde cualquier dispositivo. Se puede renombrar o eliminar desde la misma pestaña.
+
+Cómo funciona la conversión:
+
+- Lee los recursos RAGE `RSC7` (formato de PC del juego): geometría de alto detalle (`nombre_hi.yft` si existe), esqueleto, shaders y texturas (`nombre.ytd` y `nombre+hi.ytd`), con decodificación de texturas DXT1/3/5, BC4, BC5, BC7 y sin comprimir.
+- Identifica las piezas por los **shaders estándar de vehículos de GTA**: `vehicle_paint*` → carrocería (se puede repintar), `vehicle_tire` → neumáticos, `vehicle_vehglass` → cristales (tintado), `vehicle_lightsemissive` → faros y pilotos (se encienden), matrícula oculta. Las llantas se separan automáticamente por su posición dentro de los neumáticos.
+- Muchos mods **no incluyen ruedas** (el juego les pone sus llantas genéricas). En ese caso se generan neumáticos en los puntos de rueda del esqueleto y se elige un diseño de llanta genérico (cambiable).
+- Se guarda también el archivo original (`original.bin`) por si en el futuro se mejora el conversor.
+
+Limitaciones:
+
+- Solo la versión de PC «Legacy» (`RSC7`). Los archivos de la edición *Enhanced* o de consolas, los `.rpf` cifrados y los `.7z` no se admiten (extrae los `.yft`/`.ytd` con OpenIV o CodeWalker).
+- Las texturas compartidas del juego (`vehshare.ytd`) no vienen en los mods; esas piezas se muestran con un color neutro. El aviso tras la conversión indica cuántas faltan.
+- Los colores de interior/tapicería definidos por paletas del juego se muestran con su textura base.
+- **Derechos**: usa solo mods que tengas derecho a utilizar. Muchos mods de vehículos se distribuyen solo para uso personal o proceden de otros juegos; los coches subidos quedan en tu servidor para uso privado y no se incluyen en el repositorio ni en la imagen Docker.
+
+**Si ya tenías instalado el configurador** antes de esta función, ejecuta una vez (crea la carpeta `datos` y descarga el Compose nuevo, que añade ese volumen):
+
+```bash
+cd /mnt/user/appdata/configurador-tesla && mkdir -p datos && chown 99:100 datos && wget -O docker-compose.yml https://raw.githubusercontent.com/diego233l/CustomC/HEAD/docker-compose.yml && docker compose pull && docker compose up -d
 ```
 
 ---
@@ -201,6 +234,7 @@ npm ci
 npm run dev        # servidor de desarrollo en http://localhost:5173
 npm run build      # comprobación de tipos + compilación en dist/
 npm run preview    # sirve dist/
+node server/server.mjs   # servidor completo (STATIC_DIR=dist DATA_DIR=./datos CUSTOM_DIR=./modelos)
 ```
 
 Tecnología: React 19, TypeScript, Three.js con React Three Fiber y drei, postprocesado (N8AO, bloom, SMAA, mapeo tonal neutro de Khronos) y Vite. Se eligió WebGL/Three.js por su compatibilidad con todos los navegadores actuales, incluidos móviles.
@@ -214,8 +248,10 @@ public/hdri/                 entornos HDRI (CC0)
 src/three/                   escena, coche, materiales, llantas y entornos
 src/ui/                      interfaz
 src/state/store.ts           estado, guardado en navegador y enlace compartible
+src/gta/                     conversor de mods de GTA V (RSC7, .yft, .ytd, BC1–BC7) a GLB
+server/server.mjs            servidor web + API de coches subidos (sin dependencias)
 scripts/                     optimización, inspección y validación de modelos
-docker/                      configuración de nginx
+docker/                      archivos auxiliares de la imagen
 ```
 
 Licencia del código: MIT. Los modelos 3D y los HDRI mantienen sus propias licencias (ver arriba).

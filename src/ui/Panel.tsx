@@ -3,6 +3,7 @@ import type { Generation, Paint, Wheel } from '../catalog/types';
 import { useStore } from '../state/store';
 import { ENVIRONMENTS } from '../three/environments';
 import { captureImage, captureThumbnail } from '../utils/capture';
+import { ModsSection } from './ModsSection';
 
 const FINISH_LABEL: Record<Paint['finish'], string> = {
   solido: 'Sólido',
@@ -11,12 +12,13 @@ const FINISH_LABEL: Record<Paint['finish'], string> = {
   mate: 'Mate',
 };
 
-export type TabId = 'modelo' | 'pintura' | 'llantas' | 'entorno' | 'mas';
+export type TabId = 'modelo' | 'pintura' | 'llantas' | 'entorno' | 'coches' | 'mas';
 export const TABS: { id: TabId; label: string }[] = [
   { id: 'modelo', label: 'Modelo' },
   { id: 'pintura', label: 'Pintura' },
   { id: 'llantas', label: 'Llantas' },
   { id: 'entorno', label: 'Entorno' },
+  { id: 'coches', label: 'Mis coches' },
   { id: 'mas', label: 'Más' },
 ];
 
@@ -100,13 +102,21 @@ function ModelSection() {
       {gen.note && <p className="note">{gen.note}</p>}
       <p className="credit-line">
         Modelo 3D: «{gen.credits.title}» de{' '}
-        <a href={gen.credits.authorUrl ?? gen.credits.source} target="_blank" rel="noreferrer">
-          {gen.credits.author}
-        </a>{' '}
+        {gen.credits.authorUrl || /^https?:/.test(gen.credits.source) ? (
+          <a href={gen.credits.authorUrl ?? gen.credits.source} target="_blank" rel="noreferrer">
+            {gen.credits.author}
+          </a>
+        ) : (
+          gen.credits.author
+        )}{' '}
         ·{' '}
-        <a href={gen.credits.licenseUrl} target="_blank" rel="noreferrer">
-          {gen.credits.license}
-        </a>
+        {gen.credits.licenseUrl ? (
+          <a href={gen.credits.licenseUrl} target="_blank" rel="noreferrer">
+            {gen.credits.license}
+          </a>
+        ) : (
+          gen.credits.license
+        )}
       </p>
     </section>
   );
@@ -416,13 +426,21 @@ function AdvancedSection() {
             .map((g) => (
               <li key={`${m.id}/${g.id}`}>
                 {m.name} {g.label}: «
-                <a href={g.credits.source} target="_blank" rel="noreferrer">
-                  {g.credits.title}
-                </a>
+                {/^https?:/.test(g.credits.source) ? (
+                  <a href={g.credits.source} target="_blank" rel="noreferrer">
+                    {g.credits.title}
+                  </a>
+                ) : (
+                  g.credits.title
+                )}
                 » de {g.credits.author}, licencia{' '}
-                <a href={g.credits.licenseUrl} target="_blank" rel="noreferrer">
-                  {g.credits.license}
-                </a>
+                {g.credits.licenseUrl ? (
+                  <a href={g.credits.licenseUrl} target="_blank" rel="noreferrer">
+                    {g.credits.license}
+                  </a>
+                ) : (
+                  g.credits.license
+                )}
                 .{g.credits.modifications ? ` Cambios: ${g.credits.modifications}` : ''}
               </li>
             )),
@@ -449,6 +467,7 @@ export function PanelContent({ tab }: { tab: TabId | 'all' }) {
       {show('pintura') && <PaintSection />}
       {show('llantas') && <WheelSection />}
       {show('entorno') && <EnvironmentSection />}
+      {show('coches') && <ModsSection />}
       {show('mas') && <SaveExportSection />}
       {show('mas') && <AdvancedSection />}
     </>

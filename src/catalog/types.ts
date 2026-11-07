@@ -130,5 +130,5 @@ export interface Catalog {
 export interface ResolvedGeneration extends Generation {
   url: string;
   variantUrls: Record<string, string>;
-  origin: 'integrado' | 'personalizado';
+  origin: 'integrado' | 'personalizado' | 'subido';
 }

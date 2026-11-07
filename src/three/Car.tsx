@@ -195,13 +195,13 @@ export function Car({ gen, onBounds }: { gen: ResolvedGeneration; onBounds: (b: 
     for (const m of [...parts.other, ...parts.rims, ...parts.calipers, ...parts.wheelzone])
       enhanceGenericMaterial(m.material as THREE.Material);
     onBounds(prepared.bounds);
-    useStore.getState().set({ materialNames: prepared.materialNames });
+    useStore.getState().set({ materialNames: prepared.materialNames, carReady: url });
     (window as unknown as Record<string, unknown>).__carDebug = {
       parts: Object.fromEntries(Object.entries(prepared.parts).map(([k, v]) => [k, v.length])),
       slots: prepared.slots.map((s) => ({ c: s.center.toArray().map((x) => +x.toFixed(3)), r: +s.rimRadius.toFixed(3), t: +s.tireRadius.toFixed(3), w: +s.width.toFixed(3), x: +s.outerX.toFixed(3) })),
       bounds: prepared.bounds,
     };
-  }, [prepared, mats, onBounds]);
+  }, [prepared, mats, onBounds, url]);
 
   // Pintura.
   useEffect(() => {

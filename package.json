@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
+    "start": "STATIC_DIR=dist DATA_DIR=./datos CUSTOM_DIR=./modelos node server/server.mjs",
     "typecheck": "tsc --noEmit",
     "models:optimize": "node scripts/optimize-models.mjs",
     "catalog:validate": "node scripts/validate-catalog.mjs"
@@ -17,6 +18,8 @@
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "@react-three/postprocessing": "^3.2.2",
+    "fflate": "^0.8.2",
+    "node-unrar-js": "^2.0.2",
     "postprocessing": "^6.39.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

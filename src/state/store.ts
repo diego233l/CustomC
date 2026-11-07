@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { LoadedCatalog } from '../catalog/loadCatalog';
+import { loadCatalog, type LoadedCatalog } from '../catalog/loadCatalog';
 
 export type Quality = 'alta' | 'media' | 'baja';
 
@@ -44,8 +44,12 @@ interface State {
   inspector: boolean;
   highlightMaterial: string | null;
   materialNames: string[];
+  /** URL del último modelo ya preparado y añadido a la escena. */
+  carReady: string | null;
   saved: SavedConfiguration[];
   setLoaded: (l: LoadedCatalog) => void;
+  /** Vuelve a cargar el catálogo (p. ej. tras subir un coche) conservando la selección. */
+  reloadCatalog: (select?: Partial<Configuration>) => Promise<void>;
   update: (patch: Partial<Configuration>) => void;
   setView: (v: CameraViewId) => void;
   set: (patch: Partial<Omit<State, 'config'>>) => void;
@@ -129,6 +133,7 @@ export const useStore = create<State>((set, get) => ({
   inspector: false,
   highlightMaterial: null,
   materialNames: [],
+  carReady: null,
   saved: readJson<SavedConfiguration[]>(SAVED_KEY, []),
 
   setLoaded: (loaded) => {
@@ -136,6 +141,13 @@ export const useStore = create<State>((set, get) => ({
     const last = readJson<Partial<Configuration>>(LAST_KEY, {});
     const config = sanitize({ ...last, ...fromHash }, loaded);
     set({ loaded, config });
+    history.replaceState(null, '', encodeHash(config));
+  },
+  reloadCatalog: async (select) => {
+    const loaded = await loadCatalog();
+    const config = sanitize({ ...get().config, ...select }, loaded);
+    set({ loaded, config });
+    writeJson(LAST_KEY, config);
     history.replaceState(null, '', encodeHash(config));
   },
   update: (patch) => {

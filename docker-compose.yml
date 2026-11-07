@@ -5,11 +5,15 @@ services:
     image: ${CONFIGURADOR_IMAGE:-ghcr.io/diego233l/customc:latest}
     container_name: configurador-tesla
     restart: unless-stopped
+    # Usuario nobody:users de Unraid (debe poder escribir en la carpeta de datos).
+    user: "${PUID:-99}:${PGID:-100}"
     ports:
       - "${CONFIGURADOR_PORT:-8100}:8080"
     volumes:
       # Modelos 3D propios (opcional). Se conservan fuera del contenedor.
       - ${CONFIGURADOR_MODELOS:-./modelos}:/srv/configurador/custom:ro
+      # Coches subidos desde la interfaz (mods de GTA V convertidos). Se conservan al actualizar.
+      - ${CONFIGURADOR_DATOS:-./datos}:/data
     read_only: true
     tmpfs:
       - /tmp
@@ -19,6 +23,11 @@ services:
       - ALL
     environment:
       - TZ=${TZ:-Europe/Madrid}
+      # Pon SUBIDAS=false para desactivar la subida de coches.
+      - SUBIDAS=${SUBIDAS:-true}
+      # Opcional: clave que se pedirá en la interfaz para subir o borrar coches.
+      - CLAVE_SUBIDAS=${CLAVE_SUBIDAS:-}
+      - MAX_SUBIDA_MB=${MAX_SUBIDA_MB:-400}
     labels:
       net.unraid.docker.webui: "http://[IP]:[PORT:8080]/"
       net.unraid.docker.icon: "https://raw.githubusercontent.com/diego233l/CustomC/HEAD/unraid/icono.png"

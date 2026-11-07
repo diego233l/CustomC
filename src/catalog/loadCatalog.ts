@@ -3,6 +3,8 @@ import type { Catalog, Generation, ResolvedGeneration, VehicleModel } from './ty
 export const BUILTIN_CATALOG_URL = 'models/catalog.json';
 /** Carpeta montada desde el host (volumen Docker). Puede no existir. */
 export const CUSTOM_CATALOG_URL = 'custom/catalog.json';
+/** Coches subidos desde la interfaz (mods de GTA V convertidos). Generado por el servidor. */
+export const MODS_CATALOG_URL = 'mods/catalog.json';
 
 export interface LoadedCatalog {
   catalog: Catalog;
@@ -40,12 +42,11 @@ export async function loadCatalog(): Promise<LoadedCatalog> {
   const builtin = await fetchJson(builtinUrl);
   if (!builtin) throw new Error('No se pudo cargar el catálogo integrado (models/catalog.json).');
 
-  let custom: Catalog | null = null;
-  try {
-    custom = await fetchJson(customUrl);
-  } catch {
-    custom = null;
-  }
+  const modsUrl = new URL(MODS_CATALOG_URL, document.baseURI).href;
+  const [custom, mods] = await Promise.all([
+    fetchJson(customUrl).catch(() => null),
+    fetchJson(modsUrl).catch(() => null),
+  ]);
 
   const generations = new Map<string, ResolvedGeneration>();
   const resolve = (m: VehicleModel, g: Generation, base: string, origin: ResolvedGeneration['origin']) => {
@@ -56,12 +57,10 @@ export async function loadCatalog(): Promise<LoadedCatalog> {
   };
   for (const m of builtin.models) for (const g of m.generations) resolve(m, g, builtinUrl, 'integrado');
   for (const m of custom?.models ?? []) for (const g of m.generations) resolve(m, g, customUrl, 'personalizado');
+  for (const m of mods?.models ?? []) for (const g of m.generations) resolve(m, g, modsUrl, 'subido');
 
-  const models = byId(builtin.models, custom?.models, (a, b) => ({
-    ...a,
-    ...b,
-    generations: byId(a.generations, b.generations),
-  }));
+  const mergeModel = (a: VehicleModel, b: VehicleModel) => ({ ...a, ...b, generations: byId(a.generations, b.generations) });
+  const models = byId(byId(builtin.models, custom?.models, mergeModel), mods?.models, mergeModel);
 
   const catalog: Catalog = {
     version: builtin.version,
