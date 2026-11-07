@@ -12,7 +12,7 @@ Configurador web en 3D, en español, para ver los Tesla Model S, Model 3, Model 
 | --- | --- |
 | Imagen | `ghcr.io/diego233l/customc:latest` |
 | Carpeta en Unraid | `/mnt/user/appdata/configurador-tesla` |
-| Puerto por defecto | **8090** → `http://IP-DE-TU-UNRAID:8090` |
+| Puerto por defecto | **8100** → `http://IP-DE-TU-UNRAID:8100` |
 | Modelos propios | `/mnt/user/appdata/configurador-tesla/modelos` |
 
 **Comando único de actualización** (una sola línea, copiar y pegar en la terminal de Unraid):
@@ -75,10 +75,10 @@ Modificaciones aplicadas: conversión a GLB, compresión de geometría Meshopt (
    mkdir -p /mnt/user/appdata/configurador-tesla/modelos && cd /mnt/user/appdata/configurador-tesla && wget -O docker-compose.yml https://raw.githubusercontent.com/diego233l/CustomC/HEAD/docker-compose.yml
    ```
 
-3. **(Opcional) Cambia el puerto.** Por defecto es el 8090. Para usar otro, crea un archivo `.env` en la misma carpeta:
+3. **(Opcional) Cambia el puerto.** Por defecto es el 8100. Para usar otro, crea un archivo `.env` en la misma carpeta:
 
    ```bash
-   echo "CONFIGURADOR_PORT=8090" > /mnt/user/appdata/configurador-tesla/.env
+   echo "CONFIGURADOR_PORT=8100" > /mnt/user/appdata/configurador-tesla/.env
    ```
 
 4. **Acceso a la imagen.** El repositorio es público; si GitHub publica el paquete como privado, hazlo público una vez en GitHub → tu perfil → *Packages* → `customc` → *Package settings* → *Change visibility* → *Public*. Alternativa (sin hacerlo público): inicia sesión una vez en Unraid con un token personal de GitHub con permiso `read:packages`:
@@ -95,7 +95,7 @@ Modificaciones aplicadas: conversión a GLB, compresión de geometría Meshopt (
    cd /mnt/user/appdata/configurador-tesla && docker compose up -d
    ```
 
-6. **Abre** `http://IP-DE-TU-UNRAID:8090` desde cualquier navegador de la red local.
+6. **Abre** `http://IP-DE-TU-UNRAID:8100` desde cualquier navegador de la red local.
 
 Si usas la interfaz de Compose Manager, en la pestaña *Docker* → *Compose* → *Add New Stack* puedes indicar como directorio `/mnt/user/appdata/configurador-tesla` y activar *Autostart*.
 

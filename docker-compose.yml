@@ -6,7 +6,7 @@ services:
     container_name: configurador-tesla
     restart: unless-stopped
     ports:
-      - "${CONFIGURADOR_PORT:-8090}:8080"
+      - "${CONFIGURADOR_PORT:-8100}:8080"
     volumes:
       # Modelos 3D propios (opcional). Se conservan fuera del contenedor.
       - ${CONFIGURADOR_MODELOS:-./modelos}:/srv/configurador/custom:ro
