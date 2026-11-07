@@ -96,6 +96,8 @@ export interface VehicleCandidate {
   id: string;
   yft: ModFile;
   textures: ModFile[];
+  /** Triángulos del modelo de alto detalle (se rellena al analizar). */
+  triangles?: number;
 }
 
 /**

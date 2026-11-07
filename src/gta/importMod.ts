@@ -4,7 +4,7 @@ import { collectModFiles, findVehicles, type VehicleCandidate } from './archive.
 import { Resource } from './rsc.ts';
 import { buildVehicle, type ConversionReport } from './vehicle.ts';
 import { readTextureDictionary, type GtaTexture } from './ytd.ts';
-import { readYft } from './yft.ts';
+import { readYft, summarizeYft } from './yft.ts';
 
 export interface ConvertedMod {
   vehicleId: string;
@@ -15,10 +15,25 @@ export interface ConvertedMod {
 
 export async function inspectUpload(files: File[]): Promise<VehicleCandidate[]> {
   const all = await collectModFiles(files);
-  const vehicles = findVehicles(all);
-  if (!vehicles.length)
+  const found = findVehicles(all);
+  if (!found.length)
     throw new Error('No se ha encontrado ningún .yft de vehículo. Sube el .rar/.zip/.oiv del mod o los archivos .yft y .ytd.');
-  return vehicles;
+  // Los paquetes suelen traer, además del coche, decenas de piezas de tuneo
+  // (parachoques, aletas…) con otros nombres. El coche es el que tiene
+  // esqueleto de vehículo (chasis y ruedas); se ordena por detalle.
+  const analysed: VehicleCandidate[] = [];
+  for (const c of found) {
+    try {
+      if (!c.yft.resource) c.yft.resource = await Resource.load(c.yft.data);
+      const info = summarizeYft(c.yft.resource);
+      if (info.isVehicle) analysed.push({ ...c, triangles: info.triangles });
+    } catch {
+      /* archivo dañado: se ignora */
+    }
+  }
+  const result = analysed.length ? analysed : found;
+  result.sort((a, b) => (b.triangles ?? 0) - (a.triangles ?? 0));
+  return result;
 }
 
 /** Convierte un vehículo de GTA V a GLB en el propio navegador. */

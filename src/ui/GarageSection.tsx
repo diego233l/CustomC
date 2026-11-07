@@ -76,7 +76,9 @@ export function GarageSection() {
       const found = await inspectUpload(list);
       setCandidates(found);
       setChosen(found[0].id);
-      setName(pretty(found[0].id));
+      // Nombre propuesto: el del archivo subido (más descriptivo que el interno, p. ej. «surge»).
+      const fileName = list.length === 1 ? list[0].name.replace(/\.(rar|zip|oiv|rpf|yft|ytd)$/i, '') : '';
+      setName(fileName && !/^dlc$/i.test(fileName) ? pretty(fileName) : pretty(found[0].id));
       setProgress(null);
     } catch (e) {
       setError((e as Error).message);
@@ -277,7 +279,8 @@ export function GarageSection() {
                   >
                     {candidates.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.id} ({c.textures.length} diccionarios de texturas)
+                        {c.id}
+                        {c.triangles ? ` · ${Math.round(c.triangles / 1000)} mil triángulos` : ''}
                       </option>
                     ))}
                   </select>

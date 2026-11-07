@@ -261,3 +261,32 @@ export function readYft(r: Resource): GtaDrawable {
 export function readYdr(r: Resource, name: string): GtaDrawable {
   return readDrawable(r, 0, name);
 }
+
+export interface YftSummary {
+  name: string;
+  triangles: number;
+  bones: number;
+  /** Tiene esqueleto de vehículo (chasis y huesos de rueda). */
+  isVehicle: boolean;
+}
+
+/** Lectura rápida (sin vértices) para distinguir el coche de las piezas de tuneo. */
+export function summarizeYft(r: Resource): YftSummary {
+  const d = r.ptr(0x30);
+  const name = r.str(r.ptr(0x58)).replace(/^pack:\//, '').toLowerCase();
+  if (d < 0) return { name, triangles: 0, bones: 0, isVehicle: false };
+  let triangles = 0;
+  const list = r.ptr(d + 0x50);
+  if (list >= 0)
+    for (const m of r.ptrArray(r.ptr(list), r.u16(list + 8))) {
+      if (m < 0) continue;
+      for (const g of r.ptrArray(r.ptr(m + 8), r.u16(m + 0x10))) {
+        const ib = g >= 0 ? r.ptr(g + 0x38) : -1;
+        if (ib >= 0) triangles += r.u32(ib + 8) / 3;
+      }
+    }
+  const bones = readBones(r, r.ptr(d + 0x18));
+  const names = new Set(bones.map((b) => b.name));
+  const wheels = ['wheel_lf', 'wheel_rf', 'wheel_lr', 'wheel_rr'].filter((n) => names.has(n)).length;
+  return { name, triangles, bones: bones.length, isVehicle: names.has('chassis') && wheels >= 2 };
+}
