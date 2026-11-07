@@ -1,0 +1,183 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "model-s",
+      "name": "Tesla Model S",
+      "generations": [
+        {
+          "id": "plaid-2021",
+          "label": "Restyling 2021 (Plaid)",
+          "years": "2021–actualidad",
+          "file": "model-s-plaid-2021/model.glb",
+          "lengthMeters": 5.021,
+          "forward": "+z",
+          "originalWheelInches": 21,
+          "parts": {
+            "paint": ["M_2022_Tesla_Model_S_Plaid_Pearl_White_Multi_Coat"],
+            "rims": ["M_2022_Tesla_Model_S_Plaid_Rims"],
+            "tires": ["M_2022_Tesla_Model_S_Plaid_tires12__spec"],
+            "glass": ["M_2022_Tesla_Model_S_Plaid_Windows"],
+            "headlights": ["M_2022_Tesla_Model_S_Plaid_lights_lod0_a__spec"],
+            "taillights": ["M_2022_Tesla_Model_S_Plaid_RedMain", "M_2022_Tesla_Model_S_Plaid_Reflectors"],
+            "calipers": [],
+            "hide": ["Philippine_License_Plate_Recovered"]
+          },
+          "wheels": ["original", "original-negro", "original-grafito", "ms-aero-19", "ms-multirradio-21"],
+          "defaultPaint": "blanco-perla",
+          "credits": {
+            "title": "Tesla Model S Plaid 2021",
+            "author": "3D Hawk",
+            "authorUrl": "https://sketchfab.com/lachie.mullard",
+            "source": "https://sketchfab.com/3d-models/tesla-model-s-plaid-2021-481866a0b23143b18e8e4e7f642cee53",
+            "license": "CC BY 4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "modifications": "Convertido a GLB, compresión Meshopt y texturas WebP; matrícula ocultada; materiales sustituidos en tiempo real."
+          }
+        }
+      ]
+    },
+    {
+      "id": "model-3",
+      "name": "Tesla Model 3",
+      "generations": [
+        {
+          "id": "2018",
+          "label": "Primera generación",
+          "years": "2017–2023",
+          "file": "model-3-2018/model.glb",
+          "lengthMeters": 4.694,
+          "forward": "-z",
+          "originalWheelInches": 18,
+          "parts": {
+            "paint": ["primary"],
+            "rims": ["wheels.6", "wheels.2", "wheels.4"],
+            "tires": ["wheels.3"],
+            "glass": ["glass.0", "glass.1"],
+            "headlights": ["left_front_light", "right_front_light"],
+            "taillights": ["left_rear_light", "right_rear_light", "breaklight_l", "tembus_red.0"],
+            "hide": ["platnomor.1", "platnomor.2"]
+          },
+          "wheels": ["original", "original-negro", "original-grafito", "m3-aero-18", "m3-deportiva-19", "m3-turbina-20"],
+          "defaultPaint": "azul-ultramar",
+          "credits": {
+            "title": "Tesla 2018 Model 3",
+            "author": "Ameer Studio",
+            "authorUrl": "https://sketchfab.com/uchiha.321abc",
+            "source": "https://sketchfab.com/3d-models/tesla-2018-model-3-5ef9b845aaf44203b6d04e2c677e444f",
+            "license": "CC BY 4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "modifications": "Convertido a GLB, compresión Meshopt y texturas WebP; matrícula ocultada; materiales sustituidos en tiempo real."
+          }
+        }
+      ]
+    },
+    {
+      "id": "model-x",
+      "name": "Tesla Model X",
+      "generations": [
+        {
+          "id": "gen1",
+          "label": "Primera generación",
+          "years": "modelo sin año verificado",
+          "file": "model-x-gen1/model.glb",
+          "variants": [{ "id": "falcon", "label": "Puertas Falcon abiertas", "file": "model-x-gen1/model-falcon-abiertas.glb" }],
+          "lengthMeters": 5.057,
+          "forward": "+z",
+          "originalWheelInches": 20,
+          "parts": {
+            "paint": ["Color_M08", "Color_M00", "BODY1", "Color_A05"],
+            "rims": ["Snow_1", "b_rim__env_3_spe"],
+            "tires": ["material_44"],
+            "glass": ["lob_steklo__spec", "Matte__73000000", "WINDOW"],
+            "headlights": ["leftflash__spec", "rightflash__spec", "vehiclelights1", "vehiclelights2"],
+            "taillights": ["Matte__91330000", "Matte__CC330000", "Matte__FF330000", "Matte__FF660000", "Color_A05_2"],
+            "calipers": ["DarkRed"]
+          },
+          "wheels": ["original", "original-negro", "original-grafito", "mx-aero-20", "mx-turbina-22"],
+          "defaultPaint": "negro-diamante",
+          "credits": {
+            "title": "Tesla Model X (Part 1 / Part 2)",
+            "author": "BIG FAN 3D '92 NICE MODELS (@Number1FanGuy98)",
+            "authorUrl": "https://sketchfab.com/Number1FanGuy98",
+            "source": "https://sketchfab.com/3d-models/tesla-model-x-part-1-b69c8d8f607e4822b93eaf277bd36588",
+            "license": "CC BY 4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "modifications": "Versión depurada publicada por el proyecto «Million Dollar Model X» (sin logotipos ni matrículas, geometría duplicada eliminada, Meshopt); recomprimida para este configurador."
+          },
+          "note": "En este modelo la pintura comparte material con algunas piezas interiores y del paso de rueda, por lo que pueden adoptar también el color elegido."
+        }
+      ]
+    },
+    {
+      "id": "model-y",
+      "name": "Tesla Model Y",
+      "generations": [
+        {
+          "id": "2021",
+          "label": "Primera generación",
+          "years": "2020–2024",
+          "file": "model-y-2021/model.glb",
+          "lengthMeters": 4.751,
+          "forward": "+z",
+          "originalWheelInches": 19,
+          "parts": {
+            "paint": ["Carro_Pintura"],
+            "rims": ["Carro_Metal_Preto", "Carro_Plastico_Brilho"],
+            "chrome": ["Carro_Cromado"],
+            "tires": ["Carro_Pneu"],
+            "glass": ["Carro_Vidros2"],
+            "headlights": ["Carro_Metal_Farol", "Carro_Metal_Farol_1"],
+            "taillights": ["Carro_Vidro_Vermelho2", "/^Carro_Metal_Vermelho/"],
+            "calipers": ["Carro_Freio"]
+          },
+          "wheels": ["original", "original-negro", "original-grafito", "my-aero-19", "my-y-20", "my-turbina-21"],
+          "defaultPaint": "gris-estelar",
+          "credits": {
+            "title": "2021 Tesla Model Y",
+            "author": "tonielpro520",
+            "authorUrl": "https://sketchfab.com/tonielpro520",
+            "source": "https://sketchfab.com/3d-models/2021-tesla-model-y-59e2ead369984b1a85c800ff6cf6789d",
+            "license": "CC BY 4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "modifications": "Convertido a GLB, compresión Meshopt y texturas WebP; materiales sustituidos en tiempo real."
+          }
+        }
+      ]
+    }
+  ],
+  "paints": [
+    { "id": "blanco-perla", "name": "Blanco perla multicapa", "color": "#e9e9e4", "finish": "perlado", "flopColor": "#dfe6f0", "metalness": 0.15, "roughness": 0.3 },
+    { "id": "negro-solido", "name": "Negro sólido", "color": "#08090a", "finish": "solido" },
+    { "id": "negro-diamante", "name": "Negro diamante", "color": "#14161a", "finish": "metalizado", "flakeIntensity": 0.3 },
+    { "id": "gris-estelar", "name": "Gris estelar", "color": "#4f5458", "finish": "metalizado" },
+    { "id": "gris-medianoche", "name": "Gris medianoche", "color": "#2c2f33", "finish": "metalizado" },
+    { "id": "plata-rapida", "name": "Plata rápida", "color": "#a7abaf", "finish": "metalizado", "metalness": 0.8, "roughness": 0.3 },
+    { "id": "azul-ultramar", "name": "Azul ultramar", "color": "#1d3b84", "finish": "metalizado" },
+    { "id": "azul-profundo", "name": "Azul profundo", "color": "#112146", "finish": "metalizado" },
+    { "id": "rojo-ultra", "name": "Rojo ultra multicapa", "color": "#7f0a10", "finish": "perlado", "flopColor": "#ff2a2a", "metalness": 0.45, "roughness": 0.3 },
+    { "id": "verde-bosque", "name": "Verde bosque", "color": "#25372c", "finish": "metalizado" },
+    { "id": "grafito-mate", "name": "Grafito mate (vinilo)", "color": "#3b3d40", "finish": "mate" },
+    { "id": "arena-mate", "name": "Arena mate (vinilo)", "color": "#9d9282", "finish": "mate" }
+  ],
+  "wheels": [
+    { "id": "original", "name": "Originales", "design": "original", "description": "Llantas del modelo 3D" },
+    { "id": "original-negro", "name": "Originales negro brillo", "design": "original", "finish": { "color": "#0d0d0e", "metalness": 0.3, "roughness": 0.18, "clearcoat": 1 }, "description": "Mismo diseño, acabado negro" },
+    { "id": "original-grafito", "name": "Originales grafito", "design": "original", "finish": { "color": "#3a3d41", "metalness": 0.9, "roughness": 0.35 }, "description": "Mismo diseño, acabado grafito" },
+    { "id": "m3-aero-18", "name": "Aero", "inches": 18, "design": "aero", "finish": { "color": "#9ea3a8", "metalness": 0.85, "roughness": 0.3 }, "description": "Tapa aerodinámica · genérica" },
+    { "id": "m3-deportiva-19", "name": "Deportiva", "inches": 19, "design": "cinco-dobles", "finish": { "color": "#2b2e32", "metalness": 0.9, "roughness": 0.35 }, "description": "5 radios dobles · genérica" },
+    { "id": "m3-turbina-20", "name": "Turbina", "inches": 20, "design": "turbina", "finish": { "color": "#111214", "metalness": 0.4, "roughness": 0.2, "clearcoat": 1 }, "description": "Radios curvos · genérica" },
+    { "id": "my-aero-19", "name": "Aero", "inches": 19, "design": "aero", "finish": { "color": "#2a2c30", "metalness": 0.8, "roughness": 0.35 }, "description": "Tapa aerodinámica · genérica" },
+    { "id": "my-y-20", "name": "Radios en Y", "inches": 20, "design": "y-radios", "finish": { "color": "#3a3d41", "metalness": 0.9, "roughness": 0.3 }, "description": "5 radios en Y · genérica" },
+    { "id": "my-turbina-21", "name": "Turbina", "inches": 21, "design": "turbina", "finish": { "color": "#111214", "metalness": 0.4, "roughness": 0.2, "clearcoat": 1 }, "description": "Radios curvos · genérica" },
+    { "id": "ms-aero-19", "name": "Aero", "inches": 19, "design": "aero", "finish": { "color": "#b4b8bc", "metalness": 0.9, "roughness": 0.25 }, "description": "Tapa aerodinámica · genérica" },
+    { "id": "ms-multirradio-21", "name": "Multirradio", "inches": 21, "design": "multirradio", "finish": { "color": "#1a1b1e", "metalness": 0.5, "roughness": 0.25, "clearcoat": 1 }, "description": "10 radios · genérica" },
+    { "id": "mx-aero-20", "name": "Aero", "inches": 20, "design": "aero", "finish": { "color": "#a9adb2", "metalness": 0.85, "roughness": 0.3 }, "description": "Tapa aerodinámica · genérica" },
+    { "id": "mx-turbina-22", "name": "Turbina", "inches": 22, "design": "turbina", "finish": { "color": "#16171a", "metalness": 0.5, "roughness": 0.22, "clearcoat": 1 }, "description": "Radios curvos · genérica" }
+  ],
+  "caliperColors": [
+    { "id": "rojo", "name": "Rojas", "color": "#b3121b" },
+    { "id": "gris", "name": "Grises", "color": "#55595e" },
+    { "id": "amarillo", "name": "Amarillas", "color": "#d9a700" }
+  ]
+}

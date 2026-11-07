@@ -1,0 +1,24 @@
+# Configurador Tesla 3D — despliegue con Docker Compose (Unraid u otro host).
+# Variables configurables en el archivo .env junto a este archivo.
+services:
+  configurador-tesla:
+    image: ${CONFIGURADOR_IMAGE:-ghcr.io/diego233l/customc:latest}
+    container_name: configurador-tesla
+    restart: unless-stopped
+    ports:
+      - "${CONFIGURADOR_PORT:-8090}:8080"
+    volumes:
+      # Modelos 3D propios (opcional). Se conservan fuera del contenedor.
+      - ${CONFIGURADOR_MODELOS:-./modelos}:/srv/configurador/custom:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      - TZ=${TZ:-Europe/Madrid}
+    labels:
+      net.unraid.docker.webui: "http://[IP]:[PORT:8080]/"
+      net.unraid.docker.icon: "https://raw.githubusercontent.com/diego233l/CustomC/HEAD/unraid/icono.png"

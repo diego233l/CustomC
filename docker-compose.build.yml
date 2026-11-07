@@ -1,0 +1,8 @@
+# Alternativa: compilar la imagen localmente a partir del código fuente
+# (no necesita el registro). Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+services:
+  configurador-tesla:
+    image: configurador-tesla:local
+    build:
+      context: .
